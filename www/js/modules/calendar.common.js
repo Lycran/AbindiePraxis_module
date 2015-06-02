@@ -151,7 +151,13 @@ define([
 		},
 
 		exportToCalendar: function(entry, course, callback) {
-			//callback(entry);
+			var split = this.get("timespan").split(' ');
+			var dayContent = moment(split[1], "DD.MM.YYYY");
+
+			entry.startDate = this.getBegin(dayContent).toDate();
+			entry.endDate = this.getEnd(dayContent).toDate();
+
+			callback(entry);
 		}
 	});
 
@@ -164,7 +170,6 @@ define([
 		exportToCalendar: function(entry, course, callback) {
 			entry.startDate = this.getBegin(course.getStarting()).toDate();
 			entry.endDate = this.getEnd(course.getStarting()).toDate();
-
 			entry.options.recurrence = "weekly";
 			//add one day to make sure last event is also synced!
 			entry.options.recurrenceEndDate = moment(course.getEnding()).add(1, "days").toDate();
@@ -181,7 +186,19 @@ define([
 		},
 
 		exportToCalendar: function(entry, course, callback) {
-			//callback(entry);
+			var currentDate = course.getStarting();
+			var lastDate = moment(course.getEnding()).add(1, "days");
+
+			// Android doesn't know bi-weekly dates so we have to save all dates ourselves
+			// Generate new dates as long we haven't got to the end
+			while (currentDate.isBefore(lastDate)) {
+				var temp = _.clone(entry);
+				temp.startDate = this.getBegin(currentDate).toDate();
+				temp.endDate = this.getEnd(currentDate).toDate();
+				callback(temp);
+
+				currentDate.add(2, "weeks");
+			}
 		}
 	});
 

@@ -101,7 +101,7 @@ padding-bottom: 0px;
 	}
 }
 */
-#error,#error3 {
+#error,#error3, #error0 {
 	padding: .5em;
 	background: #ff9999;
 	border: 1px solid red;
@@ -622,6 +622,10 @@ label.showfirst {
 
 .sitemap-living {
 	background-color: #897cc2 !important;
+}
+
+.sitemap-sport {
+	background-color: #B6B6B4 !important;
 }
 
 /*icons akkordion*/
@@ -1765,6 +1769,11 @@ li.book-short:hover div.media_x,li.book-short:active div.media_x {
 	padding-left: 25px;
 }
 
+#peopleContent .ui-collapsible-inset {
+	
+	margin:0 0;
+}
+
 /*/***********************Impressum*********************
 **************************************************************/
 #impressum .ui-collapsible-inset .ui-collapsible-heading .ui-btn {
@@ -2201,11 +2210,11 @@ p.event-description {
 		background-size: 25px 25px;
 	}
 	.mail {
-		background-image: url(../img/up/mail-small^_hr.png) !important;
+		background-image: url(../img/up/mail-small^_hr.png);
 		background-size: 20px 11px;
 	}
 	.phone {
-		background-image: url(../img/up/phone-small_hr.png) !important;
+		background-image: url(../img/up/phone-small_hr.png);
 		background-size: 20px 11px;
 	}
 	#libraryContent li.ui-state-active:after {

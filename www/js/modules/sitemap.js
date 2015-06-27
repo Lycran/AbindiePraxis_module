@@ -8,6 +8,7 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu', 
 	var parking = "parking";
 	var associateinstitutes = "associateinstitutes";
 	var student = "student";
+	var sport = "sport";
 
 	var categoryStore = new CategoryStore();
 	var lastFinderId = undefined;
@@ -55,6 +56,13 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu', 
 			    "strokeOpacity": 1,
 			    "strokeWeight": 2,
 			    "fillColor": "#897cc2",
+			    "fillOpacity": 0.8
+			},
+			sport: {
+				"strokeColor": "#fff",
+			    "strokeOpacity": 1,
+			    "strokeWeight": 2,
+			    "fillColor": "#B6B6B4",
 			    "fillOpacity": 0.8
 			}
 		}
@@ -128,11 +136,13 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu', 
 		$('#Parking:checkbox').click(checkUncheck(parking));
 		$('#AnInstitute:checkbox').click(checkUncheck(associateinstitutes));
 		$('#Living:checkbox').click(checkUncheck(student));
+		$('#Sport:checkbox').click(checkUncheck(sport));
 
 		settings.options.institutes.fillColor = $(".sitemap-institutes").css("background-color");
 		settings.options.parking.fillColor = $(".sitemap-parking").css("background-color");
 		settings.options.associateinstitutes.fillColor = $(".sitemap-associateinstitutes").css("background-color");
 		settings.options.student.fillColor = $(".sitemap-living").css("background-color");
+		settings.options.sport.fillColor = $(".sitemap-sport").css("background-color");
 	});
 
 	function drawSelectedCampus(options) {
@@ -203,7 +213,10 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu', 
 			var studentData = Q.fcall(getGeoByCategory, data, student)
 								.then(drawCategory(settings.options.student, student, url.campus));
 
-			return [terminalsData, institutesData, canteensData, parkingData, associateinstitutesData, studentData];
+			var sportData = Q.fcall(getGeoByCategory, data, sport)
+								.then(drawCategory(settings.options.sport, sport, url.campus));
+
+			return [terminalsData, institutesData, canteensData, parkingData, associateinstitutesData, studentData, sportData];
 		};
 	}
 
@@ -274,7 +287,12 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu', 
 		host.trigger("create");
 
 		var similars = similarHouses.concat(similarDescriptions);
-		similars = _.uniq(similars, false, function(item) { return item.data; });
+		similars = _.uniq(similars, false, function(item) {
+			if (item && item.geo && item.geo.properties)
+				return item.geo.properties.id;
+			else
+				return item.data;
+		});
 
 		_.each(similars, function(item) {
 			$("#similarlocations").append("<li><a onclick='require([\"modules/sitemap\"], function(Sitemap) { new Sitemap().sitemapNavigateTo(\"" + item.geo.properties.id + "\"); });'>" + item.geo.properties.Name + " (" + item.campus + ")</a></li>");

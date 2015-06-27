@@ -15,15 +15,25 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'modules/transport.util'],
 
     initialize: function(options) {
       this.stations = options.stations;
-      this.stationName = options.stationName;
-      this.stationTime = options.stationTime;
+      this.updateContent(options.collection, options.stationName, options.stationTime);
 
       this.template = utils.rendertmpl('transport_listitem_view');
 
       this.$ul = this.$el.find('ul#transport-list');
+      _.bindAll(this, 'addOne');
+    },
+
+    updateContent: function(stationJourneys, stationName, stationTime) {
+      this.stationName = stationName;
+      this.stationTime = stationTime;
+
+      // Forget the old collection
+      this.collection.off(null, null, this);
+      this.collection = stationJourneys;
+
+      // Listen to changes in the new collection
       this.collection.on("reset", this.render, this);
       this.collection.on("add", this.addOne, this);
-      _.bindAll(this, 'addOne');
     },
 
     addOne: function(journey) {
@@ -82,7 +92,6 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'modules/transport.util'],
       this.listenTo(this, "prepareJouneys", this.prepareJouneys);
       this.listenTo(this, "renderTransportList", this.renderTransportList);
       this.listenTo(this.collection.where(view_state)[0], "sync", _.once(this.renderTransportList));
-      this.trigger("renderTransportList");
     },
 
     renderTransportList: function(){
@@ -116,11 +125,9 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'modules/transport.util'],
       });
       var that = this;
       transportViewNavbar.on('select', function(buttonName){
-        view_state = {campus: buttonName}
-        first_journey = that.collection.where(view_state)[0]
-        transportViewTransportList.collection  = first_journey.get('journeys');
-        transportViewTransportList.stationName = first_journey.get('name');
-        transportViewTransportList.stationTime = first_journey.get('stationTime');
+        view_state = {campus: buttonName};
+        first_journey = that.collection.where(view_state)[0];
+        transportViewTransportList.updateContent(first_journey.get('journeys'), first_journey.get('name'), first_journey.get('stationTime'));
         transportViewTransportList.render();
       });
 

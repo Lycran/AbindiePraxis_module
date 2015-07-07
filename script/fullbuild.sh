@@ -13,6 +13,7 @@ rm -rf $1.json
 cd ..
 
 phonegap build $1
+sh script/optimize-js.sh
 sh script/add-plugins.sh
 sh script/copy-resources.sh
 phonegap run $1

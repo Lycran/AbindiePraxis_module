@@ -243,6 +243,7 @@ define([
 
 		triggerReset: function() {
 			this.resetCoursesForDay();
+			this.trigger("resetCoursesForDay");
 		},
 
 		resetCoursesForDay: function() {

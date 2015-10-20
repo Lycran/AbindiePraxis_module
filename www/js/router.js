@@ -27,8 +27,9 @@ define([
 	'modules/impressum',
 	'modules/options',
 	'modules/people',
-	'modules/calendar.export'
-], function($, _, Backbone, BaseRouter, Session, utils, customHistory, HomePageView, NewsView, EventsView, CalendarPageView, MoodlePageView, EmergencyPageView, SitemapPageView, RoomPageView, OpeningPageView, TransportPageView, Transport2PageView, MensaPageView, LibraryPageView, LecturesPageView, GradesPageView, ImpressumPageView, OptionsPageView, PeoplePageView, CalendarExportPageView){
+	'modules/calendar.export',
+        'modules/course'
+], function($, _, Backbone, BaseRouter, Session, utils, customHistory, HomePageView, NewsView, EventsView, CalendarPageView, MoodlePageView, EmergencyPageView, SitemapPageView, RoomPageView, OpeningPageView, TransportPageView, Transport2PageView, MensaPageView, LibraryPageView, LecturesPageView, GradesPageView, ImpressumPageView, OptionsPageView, PeoplePageView, CalendarExportPageView, CoursePageView){
 
 	var AppRouter = BaseRouter.extend({
 
@@ -57,6 +58,7 @@ define([
 			"lectures":"lectures",
 			"lectures/*vvzUrls":"lectures",
 			"grades":"grades",
+			"course":"course",
 			"impressum": "impressum",
 			"options": "options",
 			"people": "people"
@@ -65,7 +67,7 @@ define([
 		routesToScrollPositions: {},
 
 		// routes that need authentication
-		requiresAuth: ['calendar', 'calendarexport', 'moodle', 'grades', 'people'],
+		requiresAuth: ['calendar', 'calendarexport', 'moodle', 'grades', 'people','course'],
 
 		// routes to prevent authentication when already authenticated
 		preventAccessWhenAuth: [],
@@ -200,6 +202,10 @@ define([
 		moodle: function (courseid) {
 			this.changePage(new MoodlePageView({model: this.session, courseid: courseid}));
 		},
+		
+		course: function () {
+			this.changePage(new CoursePageView());
+		},
 
 		lectures: function(vvzUrls){
 			this.changePage(new LecturesPageView);
@@ -222,7 +228,8 @@ define([
 		grades: function(){
 			this.changePage(new GradesPageView);
 		},
-
+		
+	
 		library: function(){
 			// later on Search View and PersonPageView and LibraryPageView
 			this.listenToLibraryChange();
@@ -252,10 +259,6 @@ define([
 
 		opening: function(){
 			this.changePage(new OpeningPageView);
-		},
-
-		transport: function(){
-			this.changePage(new TransportPageView);
 		},
 
 		mensa: function(){

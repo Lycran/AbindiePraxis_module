@@ -1,3 +1,4 @@
+/* global $ */
 $.mobile.document.on( "pageshow", "#opening", function() {
     var head = $( ".ui-page-active [data-role='header']" ),
         foot = $( ".ui-page-active [data-role='footer']" ),

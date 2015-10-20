@@ -1,4 +1,10 @@
-define(['jquery', 'underscore', 'backbone', 'utils', 'modules/campusmenu', 'modules/timeselection', 'underscore.string'], function($, _, Backbone, utils, campusmenu, timeselection, _str){
+define(['jquery',
+       'underscore',
+       'backbone',
+       'utils',
+       'modules/campusmenu',
+       'modules/timeselection',
+       'underscore.string'], function($, _, Backbone, utils, campusmenu, timeselection, _str){
 
 	$(document).on("pageinit", "#room", function () {
 		$("div[data-role='campusmenu']").campusmenu({ onChange: updateRoomData });

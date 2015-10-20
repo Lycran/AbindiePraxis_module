@@ -1,0 +1,17 @@
+<h2><%=currentCourseName%></h2>
+		<div>
+			<div>
+				<span>Es konnte kein Link zum Kurs '<%=currentCourseName%>' gefunden werden. Sie können manuell einen Link hinzufügen.</span>
+			</div>
+			<div class="">
+				<label for="inputUrl">URL:</label>
+				<div style="text-align:center;">
+					<input type="hidden" id="courseID" value="<%=currentCourseID%>"/>
+					<input style="width:80%" type="text" name="inputUrl" id="inputUrl" value="http://"/>
+				</div>
+			</div>
+			<div class="flex-item iconized OK">
+				<a href="" data-role="button">OK</a>
+			</div>
+		</div>
+		

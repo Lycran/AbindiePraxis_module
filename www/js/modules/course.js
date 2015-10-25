@@ -102,9 +102,21 @@ define(['jquery',
         },
 
         locateTag: function() {
+	  nfc.addTagDiscoveredListener(
+	    function(event) {
+		alert(JSON.stringify(event));
+	    },
+	    function() {
+		alert("Success.");
+	    },
+	    function() {
+		alert("Fail.");
+	    });
             navigator.alert("Noch nicht verfügbar.", function() {
                 window.history.back();
             }, "Hinweis", "OK");
+	    this.template = utils.rendertmpl('course');
+	    this.render();
         },
 
         onCoursesFetched: function(courseList) {

@@ -13,6 +13,8 @@ define(['jquery',
   var formProxy = {};
   _.extend(formProxy, Backbone.Events);
   
+  var eventProxy = {id:"nothing"};
+  
   var link_mapper = {
         map: function(courseName, moodleCourses) {
             var result = [];
@@ -42,16 +44,12 @@ define(['jquery',
         }
     };
 
-    var nfcHandler = {
-        doAlert: function() {
-            alert("Success.");
-        },
-
-        handleTag: function(event) {
+    var handleTag = function(event) {
 	    alert(event);
+	    eventProxy = event;
             formProxy.trigger("tagRecieved");
-        }
-    };
+        };
+   
 
     var CoursePageView = Backbone.View.extend({
         attributes: {
@@ -90,7 +88,8 @@ define(['jquery',
         render: function() {
             $(this.el).html(this.template({
                 currentCourseName: this.currentCourseName,
-                currentCourseID: this.currentCourseID
+                currentCourseID: this.currentCourseID,
+		tagID: this.tagID
             }));
             return this;
         },
@@ -126,8 +125,10 @@ define(['jquery',
 
         waitForTag: function() {
             nfc.addTagDiscoveredListener(
-                nfcHandler.handleTag,
-                nfcHandler.doAlert,
+               handleTag,
+                function() {
+                    alert("success.");
+                },
                 function() {
                     alert("Fail.");
                 });
@@ -139,6 +140,10 @@ define(['jquery',
 
 
         tagRecieved: function() {
+	    alert("tag recieved");
+	    //not working -,-
+	    //nfc.removeTagDiscoveredListener(handleTag,function(){alert("notSuccesful");},function(){alert("error");});
+	    this.tagID = eventProxy.tag.id;
             this.template = utils.rendertmpl('course_tagrecieved');
             this.render();
         },

@@ -6,8 +6,9 @@ define(['jquery',
     'moment',
     'modules/calendar.common',
     'modules/moodle.api',
-    'modules/localstorage.api'
-], function($, _, Backbone, utils, moment, calendar, moodleAPI, storage) {
+    'modules/localstorage.api',
+    'nfc'
+], function($, _, Backbone, utils, moment, calendar, moodleAPI, storage,nfcapi) {
 
     var link_mapper = {
         map: function(courseName, moodleCourses) {
@@ -105,6 +106,7 @@ define(['jquery',
 	  nfc.addTagDiscoveredListener(
 	    function(event) {
 		alert(JSON.stringify(event));
+		//get id and save to course
 	    },
 	    function() {
 		alert("Success.");
@@ -112,9 +114,9 @@ define(['jquery',
 	    function() {
 		alert("Fail.");
 	    });
-            navigator.alert("Noch nicht verfügbar.", function() {
-                window.history.back();
-            }, "Hinweis", "OK");
+           // navigator.alert("Noch nicht verfügbar.", function() {
+           //     window.history.back();
+           // }, "Hinweis", "OK");
 	    this.template = utils.rendertmpl('course');
 	    this.render();
         },

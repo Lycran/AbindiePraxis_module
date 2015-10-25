@@ -28,7 +28,8 @@ require.config({
         'uri': 'vendor/src',
         'history': 'lib/history',
         'moodle.download': 'lib/moodle.download',
-        'headerParser': 'lib/headerParser'
+        'headerParser': 'lib/headerParser',
+	'nfc':'vendor/phonegap-nfc'
     },
     shim: {
         'cache': ['backbone', 'underscore']

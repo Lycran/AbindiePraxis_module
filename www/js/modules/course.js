@@ -8,15 +8,18 @@ define(['jquery',
     'modules/moodle.api',
     'modules/localstorage.api',
     'nfc'
-], function($, _, Backbone, utils, moment, calendar, moodleAPI, storage,nfcapi) {
+], function($, _, Backbone, utils, moment, calendar, moodleAPI, storage, nfcapi) {
 
-    var link_mapper = {
+  var formProxy = {};
+  _.extend(formProxy, Backbone.Events);
+  
+  var link_mapper = {
         map: function(courseName, moodleCourses) {
             var result = [];
             var courseID = $(courseName.split(" "))[0];
             // first check storage
-	    if(storage.getCourseLink(courseID) != '')
-            result.push(storage.getCourseLink(courseID));
+            if (storage.getCourseLink(courseID) != '')
+                result.push(storage.getCourseLink(courseID));
 
             // if nothing found check Moodle
             if (result.length == 0) {
@@ -39,7 +42,16 @@ define(['jquery',
         }
     };
 
+    var nfcHandler = {
+        doAlert: function() {
+            alert("Success.");
+        },
 
+        handleTag: function(event) {
+	    alert(event);
+            formProxy.trigger("tagRecieved");
+        }
+    };
 
     var CoursePageView = Backbone.View.extend({
         attributes: {
@@ -49,11 +61,12 @@ define(['jquery',
 
         initialize: function() {
 
+	    formProxy.on('tagRecieved', this.tagRecieved, this);
             //get current courselist
             this.day = new Date();
             this.day = moment(this.day);
             // !!!!!!!!!!!!!!!! only for debugging !!!!!!!!!!!!!!!!!
-           // this.day = moment('2015-05-27');
+            // this.day = moment('2015-05-27');
             // !!!!!!!!!!!!!!!! only for debugging !!!!!!!!!!!!!!!!!!
             this.CourseList = new calendar.CourseList();
             this.CourseSlots = new calendar.CourseSlots(undefined, {
@@ -103,22 +116,31 @@ define(['jquery',
         },
 
         locateTag: function() {
-	  nfc.addTagDiscoveredListener(
-	    function(event) {
-		alert(JSON.stringify(event));
-		//get id and save to course
-	    },
-	    function() {
-		alert("Success.");
-	    },
-	    function() {
-		alert("Fail.");
-	    });
-           // navigator.alert("Noch nicht verfügbar.", function() {
-           //     window.history.back();
-           // }, "Hinweis", "OK");
-	    this.template = utils.rendertmpl('course');
-	    this.render();
+
+
+            this.listenToOnce(this, "waitForTag", this.waitForTag);
+
+            this.trigger("waitForTag");
+            return this;
+        },
+
+        waitForTag: function() {
+            nfc.addTagDiscoveredListener(
+                nfcHandler.handleTag,
+                nfcHandler.doAlert,
+                function() {
+                    alert("Fail.");
+                });
+
+            this.listenToOnce(this, "tagRecieved", this.tagRecieved);
+            // this.template = utils.rendertmpl('course_loading');
+            // this.render();
+        },
+
+
+        tagRecieved: function() {
+            this.template = utils.rendertmpl('course_tagrecieved');
+            this.render();
         },
 
         onCoursesFetched: function(courseList) {
@@ -146,16 +168,16 @@ define(['jquery',
                     if (courseLink.length > 0) {
                         window.open(courseLink[0], '_system');
                     } else {
-		        this.template = utils.rendertmpl('course_nolink');
+                        this.template = utils.rendertmpl('course_nolink');
                     }
                 } else {
                     // we have more than one course at this time open locator view
                     this.template = utils.rendertmpl('course');
                 }
             } else {
-	      this.template = utils.rendertmpl('course');
-                      
-               // this.template = utils.rendertmpl('course_empty');
+                this.template = utils.rendertmpl('course');
+
+                // this.template = utils.rendertmpl('course_empty');
             }
             this.render();
         },

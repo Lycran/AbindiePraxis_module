@@ -1,7 +1,8 @@
 "use strict";
 
 define([
-  'underscore'
+  'underscore',
+  'modules/localstorage.api'
 ], function( _ ) {
 
   var utils = {};
@@ -73,5 +74,38 @@ define([
     return fixed_contents_arr;
   }
 
+  /**
+   * Find matching moodle course link out of moodleCourses collection 
+   * by courseName (name from calender).
+   * 
+   * Returns string[] with matching links. (should only one)
+   */
+  utils.getCourseByName = function(courseName, moodleCourses)
+  {
+    var result = [];
+            var courseID = $(courseName.split(" "))[0];
+            // first check storage
+            if (storage.getCourseLink(courseID) != '')
+                result.push(storage.getCourseLink(courseID));
+
+            // if nothing found check Moodle
+            if (result.length == 0) {
+                moodleCourses.filter(function(item) {
+                    var candidates = item.get('fullname').split(" ");
+                    for (var i = 0; i < candidates.length; i++) {
+                        if (candidates[i] != 'Übung' && candidates[i] != 'Praktikum' && candidates[i] != 'Seminar' && candidates[i] != 'Vorlesung') {
+                            if (courseName.indexOf(candidates[i]) > -1) {
+                                var link = "https://moodle2.uni-potsdam.de/course/view.php?id=" + item.get('id');
+                                result.push(link);
+                                storage.saveCourseLink(courseID, link);
+                                return true;
+                            }
+                        }
+                    }
+                });
+            }
+
+            return result;
+  }
   return utils;
 });

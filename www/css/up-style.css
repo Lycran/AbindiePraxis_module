@@ -2596,3 +2596,25 @@ p.event-description {
 	-webkit-animation-timing-function: ease-in-out;
 	-webkit-animation-duration: 200ms !important;
 }
+
+
+/********************* aktueller Kurs ******************
+ *******************************************************/
+.center
+{
+  text-align:center;
+  
+}
+
+.center{text-align:center;}
+
+.bluebutton
+{
+    padding: 1em 0px 1em 0px;
+    background: #D0DAE3;
+    margin-top: 0.6em;
+    color:black;
+    text-decoration: none;
+    border-top: 1px solid #014260;
+    border-bottom: 1px solid #014260; 
+}

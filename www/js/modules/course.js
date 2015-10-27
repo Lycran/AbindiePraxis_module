@@ -50,12 +50,7 @@ define(['jquery',
             this.listenToOnce(this.CourseSlots, 'resetCoursesForDay', this.onCoursesFetched);
          
             this.template = utils.rendertmpl('course_loading');
-            this.LoadingView = new utils.LoadingView({
-                collection: this.CourseList,
-                el: this.$("#loadingSpinner")
-            });
-            this.LoadingView.spinnerOn();
-
+        
 	    this.CourseList.fetch();
 
         },
@@ -157,12 +152,6 @@ define(['jquery',
 
         fetchContent: function() {
             MoodleApp.courses = new window.MoodleApp.CourseList();
-
-            this.LoadingView = new utils.LoadingView({
-                collection: MoodleApp.courses,
-                el: this.$("#loadingSpinner")
-            });
-            this.LoadingView.spinnerOn();
 
             // fetch all necessary information
             MoodleApp.courses.fetch();

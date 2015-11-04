@@ -80,7 +80,7 @@ define([
    * 
    * Returns string[] with matching links. (should only one)
    */
-  utils.getCourseByName = function(courseName, moodleCourses)
+  utils.getCourseLinkByCourseName = function(courseName, moodleCourses)
   {
     var result = [];
             var courseID = $(courseName.split(" "))[0];

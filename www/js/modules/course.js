@@ -7,9 +7,13 @@ define(['jquery',
     'modules/calendar.common',
     'modules/moodle.api',
     'modules/moodle.utils',
-    'nfc' // not directly accessed but needed for instanciation
-], function($, _, Backbone, utils, moment, calendar, moodleAPI, moodleUtils, nfcapi) {
+    'nfc', // not directly accessed but needed for instanciation
+    'modules/iddb'
+], function($, _, Backbone, utils, moment, calendar, moodleAPI, moodleUtils, nfcapi, iddb) {
 
+    ///////////////////////////////////////
+    //     Form and event eventProxy     //
+    ///////////////////////////////////////
     var formProxy = {};
     var eventProxy = {
         id: "nothing"
@@ -17,7 +21,6 @@ define(['jquery',
     _.extend(formProxy, Backbone.Events);
 
     var onTagDiscovered = function(event) {
-        alert(event);
         eventProxy = event;
         formProxy.trigger("tagRecieved");
     };
@@ -48,10 +51,10 @@ define(['jquery',
             });
 
             this.listenToOnce(this.CourseSlots, 'resetCoursesForDay', this.onCoursesFetched);
-         
+
             this.template = utils.rendertmpl('course_loading');
-        
-	    this.CourseList.fetch();
+
+            this.CourseList.fetch();
 
         },
 
@@ -89,6 +92,11 @@ define(['jquery',
         locateWlan: function() {
             alert("Noch nicht verfügbar.");
         },
+	
+	
+	///////////////////////////////////////
+	//          Tag handling             //
+	///////////////////////////////////////
 
         locateTag: function() {
 
@@ -99,32 +107,57 @@ define(['jquery',
         waitForTag: function() {
             nfc.addTagDiscoveredListener(
                 onTagDiscovered,
-                function() {
-                    alert("success.");
-                },
+                function() {},
                 function() {
                     alert("NFC Modul konnte nicht aktiviert werden.");
                 });
 
             this.listenToOnce(this, "tagRecieved", this.tagRecieved);
-            // this.template = utils.rendertmpl('course_loading');
-            // this.render();
+            this.template = utils.rendertmpl('course_scantag');
+            this.render();
         },
 
 
         tagRecieved: function() {
-            alert("tag recieved");
             //not working -,-
             //nfc.removeTagDiscoveredListener(onTagDiscovered,function(){alert("notSuccesful");},function(){alert("error");});
             this.tagID = eventProxy.tag.id;
-            this.template = utils.rendertmpl('course_tagrecieved');
+            alert(this.tagID);
+            var iddbModel = new iddb({
+                id: this.tagID
+            });
+            iddbModel.on('sync', this.onIddbFetched, this);
+            iddbModel.fetch();
             this.render();
         },
 
+        onIddbFetched: function(result) {
+            var room = result.get("room");
+            alert(room);
+            var matchingCourse = this.currentCourses.filter(function(item) {
+                var roomFromCalender = item.get('room');
+                if (item == roomFromCalender)
+                    return true;
+                else
+                    return false;
+            });
+            alert(matchingCourse);
+            this.currentCourseName = currentCourses[0].get('name');
+            var courseLink = moodleUtils.getCourseLinkByCourseName(this.currentCourseName, result);
+
+            if (courseLink.length > 0) {
+                window.open(courseLink[0], '_system');
+            } else {
+                this.template = utils.rendertmpl('course_nolink');
+            }
+        },
+
+	///////////////////////////////////////
+	//     Fetch calender and moodle     //
+	///////////////////////////////////////
         onCoursesFetched: function(courseList) {
 
             // calender curses fetched. Now get moodle courses.
-            this.CourseList = courseList;
             this.MoodleCourseList = new window.MoodleApp.CourseList();
             this.listenToOnce(this, "authorize", this.authorize);
             this.listenToOnce(this, "fetchContent", this.fetchContent);
@@ -157,19 +190,19 @@ define(['jquery',
             MoodleApp.courses.fetch();
             MoodleApp.courses.bind("reset", this.onMoodleFetched, this);
         },
-	
-	onMoodleFetched: function(result) {
-            var currentCourses = this.CourseSlots.findByTimeslot('12:12', '12:13');
-            
-	    if (currentCourses.length > 0) {
-                if (currentCourses.length === 1) {
-                  
-		  // we have  only one course at this time so we can open the link.
+
+        onMoodleFetched: function(result) {
+            this.currentCourses = this.CourseSlots.findByTimeslot('12:12', '12:13');
+
+            if (this.currentCourses.length > 0) {
+                if (this.currentCourses.length === 1) {
+
+                    // we have  only one course at this time so we can open the link.
                     this.currentCourseName = currentCourses[0].get('name');
-                    var courseLink = moodleUtils.getCourseByName(this.currentCourseName, result);
+                    var courseLink = moodleUtils.getCourseLinkByCourseName(this.currentCourseName, result);
                     this.currentCourseID = this.currentCourseName.split(" ")[0];
-                   
-		    if (courseLink.length > 0) {
+
+                    if (courseLink.length > 0) {
                         window.open(courseLink[0], '_system');
                     } else {
                         this.template = utils.rendertmpl('course_nolink');
@@ -179,11 +212,11 @@ define(['jquery',
                     this.template = utils.rendertmpl('course');
                 }
             } else {
-	      
-	        //TODO debuging purpose
+                
+                //TODO debuging purpose
                 this.template = utils.rendertmpl('course');
 
-		//TODO original
+                //TODO original
                 // this.template = utils.rendertmpl('course_empty');
             }
             this.render();

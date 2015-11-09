@@ -105,22 +105,34 @@ define(['jquery',
         },
 
         waitForTag: function() {
-            nfc.addTagDiscoveredListener(
-                onTagDiscovered,
-                function() {},
-                function() {
-                    alert("NFC Modul konnte nicht aktiviert werden.");
-                });
+	    if(typeof(nfc) != 'undefined')
+	    {
+		nfc.addTagDiscoveredListener(
+		    onTagDiscovered,
+		    function() {},
+		    function() {
+			alert("NFC Modul konnte nicht aktiviert werden.");
+			this.template = utils.rendertmpl('course');
+		    });
 
-            this.listenToOnce(this, "tagRecieved", this.tagRecieved);
-            this.template = utils.rendertmpl('course_scantag');
-            this.render();
+		this.listenToOnce(this, "tagRecieved", this.tagRecieved);
+		this.template = utils.rendertmpl('course_scantag');
+		this.render();
+	    }else
+	    {
+		alert('NFC ist auf diesem Geräte nicht verfügbar');
+		this.template = utils.rendertmpl('course');
+	    }
         },
 
 
         tagRecieved: function() {
-            //not working -,-
-            //nfc.removeTagDiscoveredListener(onTagDiscovered,function(){alert("notSuccesful");},function(){alert("error");});
+	    try{
+            nfc.removeTagDiscoveredListener(onTagDiscovered,function(){},function(){});
+	    }catch(err)
+	    {
+	      alert(err);
+	    }
             this.tagID = eventProxy.tag.id;
             alert(this.tagID);
             var iddbModel = new iddb({

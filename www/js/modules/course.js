@@ -128,10 +128,10 @@ define(['jquery',
 
         tagRecieved: function() {
 	    try{
-            nfc.removeTagDiscoveredListener(onTagDiscovered,function(){},function(){});
+		nfc.removeTagDiscoveredListener(onTagDiscovered,function(){},function(){});
 	    }catch(err)
 	    {
-	      alert(err);
+		alert(err);
 	    }
             this.tagID = eventProxy.tag.id;
             alert(this.tagID);

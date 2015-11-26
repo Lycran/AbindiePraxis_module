@@ -61,9 +61,18 @@ define([
 					return new BiWeeklyDate(date);
 				} else {
 					console.log("Unknown rhythm " + date.rythm);
+					this.logUnknownCourseRhythm(date.rythm);
 					return new WeeklyDate(date);
 				}
-			});
+			}, this);
+		},
+
+		logUnknownCourseRhythm: function(rhythm) {
+			var model = new Backbone.Model();
+			model.url = "https://api.uni-potsdam.de/endpoints/errorAPI/rest/courses";
+			model.set("courseName", this.get("name"));
+			model.set("rhythm", rhythm);
+			model.save();
 		},
 
 		getStarting: function() {
@@ -97,7 +106,7 @@ define([
 
 		initialize: function(){
 			this.session = new Session();
-			this.url = "https://api.uni-potsdam.de/endpoints/pulsAPI?action=course&auth=H2LHXK5N9RDBXMB&datatype=json";
+			this.url = "https://api.uni-potsdam.de/endpoints/pulsAPI/1.0?action=course&auth=H2LHXK5N9RDBXMB&datatype=json";
 			this.url += "&user=" + encodeURIComponent(this.session.get('up.session.username'));
 			this.url += "&password=" + encodeURIComponent(this.session.get('up.session.password'));
 		},

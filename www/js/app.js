@@ -1,22 +1,54 @@
-/**
- *  file contains the initialization of the application
- */
+var app = {models:{},views:{},controllers:{}};
 define([
 	'jquery',
 	'underscore',
 	'backbone',
-	'router',
+	'backboneMVC',
 	'underscore.string',
 	'utils',
+	'q',
 	'fastclick',
+	'Session',
 	'history',
-	'jquerymobile'], function($, _, Backbone, Router, _str, utils, FastClick, customHistory){
+	'viewContainer',
+	'controllerLoader',
+	'jquerymobile',
+	'datebox',
+	'LocalStore'
+	], function($, _, Backbone, BackboneMVC, _str, utils, Q, FastClick, Session, customHistory, ViewHelper, controllerLoader){
+		var viewContainer = ViewHelper.viewContainer;
+		viewContainer.initialize();
+		var pageContainer = ViewHelper.pageContainer;
 
+		//AppRouter-Klasse erstellen
+		var AppRouter = BackboneMVC.Router.extend({
+			before:function(route){ //wird komischerweise nur ausgeführt, wenn zurücknavigiert wird. Und genau dafür wird diese Funktion benutzt.
+				window.backDetected = true;
+			}
+		});
 
-		var Application = Backbone.Model.extend({
+		_.extend(app, {
+			authUrls: [
+				"https://api.uni-potsdam.de/endpoints/roomsAPI",
+				"https://api.uni-potsdam.de/endpoints/libraryAPI",
+				"https://api.uni-potsdam.de/endpoints/pulsAPI",
+				"https://api.uni-potsdam.de/endpoints/moodleAPI",
+				"https://api.uni-potsdam.de/endpoints/transportAPI/2.0/",
+				"https://api.uni-potsdam.de/endpoints/errorAPI",
+				"https://api.uni-potsdam.de/endpoints/personAPI",
+				"https://api.uni-potsdam.de/endpoints/mensaAPI",
+				"https://api.uni-potsdam.de/endpoints/newsAPI",
+				"https://api.uni-potsdam.de/endpoints/staticContent"],
+			router : new AppRouter(), //Router zuweisen
+			viewManager: viewContainer,
+			/*
+			* Intitialisierung
+			*/
 
 			initialize: function(){
-				// initialize fastclick
+				app.session = new Session;
+				utils.detectUA($, navigator.userAgent);
+				viewContainer.setIosHeaderFix();
 				new FastClick(document.body);
 
 				$(document).ready(function() {
@@ -35,57 +67,123 @@ define([
     						e.preventDefault();
     						navigator.app.exitApp();
     					}else{
-    						$.mobile.changePage.defaults.transition = utils.defaultTransition();
-    						$.mobile.changePage.defaults.reverse = 'reverse';
-    						customHistory.goBack();
+							viewContainer.setReverseSlidefadeTransition();
+							customHistory.goBack();
     					}
     				}, false);
 				}
 
-				/**
-		 	 	 * Override Backbone.sync to automatically include auth headers according to the url in use
-		 	 	 */
-				function overrideBackboneSync() {
-					var authUrls = ["https://api.uni-potsdam.de/endpoints/roomsAPI",
-									"https://api.uni-potsdam.de/endpoints/libraryAPI",
-									"https://api.uni-potsdam.de/endpoints/pulsAPI",
-									"https://api.uni-potsdam.de/endpoints/moodleAPI",
-									"https://api.uni-potsdam.de/endpoints/transportAPI/1.0/",
-									"https://api.uni-potsdam.de/endpoints/errorAPI",
-									"https://api.uni-potsdam.de/endpoints/personAPI",
-									"https://api.uni-potsdam.de/endpoints/mensaAPI",
-									"https://api.uni-potsdam.de/endpoints/staticContent"];
-					var isStartOf = function(url) {
-						return function(authUrl) {
-							return _str.startsWith(url, authUrl);
-						};
-					};
-
-					var sync = Backbone.sync;
-					Backbone.sync = function(method, model, options) {
-						var url = options.url || _.result(model, "url");
-						if (url && _.any(authUrls, isStartOf(url))) {
-							options.headers = _.extend(options.headers || {}, { "Authorization": utils.getAuthHeader() });
-						}
-						return sync(method, model, options);
-					};
-				}
-
-			 	// Initialize Backbone override
-				$(overrideBackboneSync);
+				// Initialize Backbone override
+				$(utils.overrideBackboneSync);
 
 				// Initialize external link override
-				$(document).on("click", "a", utils.overrideExternalLinks);
-
-				// Activate extended ajax error logging on console
-				//utils.activateExtendedAjaxLogging();
+				$(document).on("click", "a", _.partial(utils.overrideExternalLinks, _, viewContainer.removeActiveElementsOnCurrentPage));
 
 				// Register global error handler
 				window.onerror = utils.onError;
 
-				Router.initialize();
+				//Globale Events zuordnen
+				this.bindEvents();
+				//Anwendungsurl ermitteln
+				var baseUrl = document.location.pathname.replace(/\/index\.html/, '');
+				//Backbone URL-Routing-Funktion starten
+				customHistory.startTracking(baseUrl);
+
+				this._gotoEntryPoint();
+			},
+
+			_gotoEntryPoint: function() {
+				if(!window.location.hash) { //Wenn keine URL übergeben wurde, das Hauptmenü aufrufen
+					this.route("main/menu");
+				} else { //Sonst aktuelle URL in die app.history aufnehmen
+					customHistory.push(Backbone.history.fragment);
+				}
+			},
+
+			/**
+			* Wrapper für die Backbone route Funktion
+			* @param url: zu routende URL
+			* @param noTrigger: true: nur url ändern aber nicht Aktion ausführen
+            * @param replace
+			*/
+			route:function(url, noTrigger, replace){
+				var trigger = !noTrigger;
+				replace = !!replace;
+				url = this._cleanUrl(url);
+				this.router.navigate(url, {trigger: trigger, replace: replace}); //Url auf Controller routen
+			},
+			/**
+			 * Removes leading # and ensures the right entry point
+			 * @param url Raw url
+			 * @returns Cleaned url
+			 */
+			_cleanUrl: function(url) {
+				if(url.charAt(0) == '#')
+					url = url.slice(1);
+				if(url == 'home' || url == '')
+					url = 'main/menu';
+				return url;
+			},
+			/*
+			* Zur letzten URL zurückwechseln, die in app.history gespeichert ist
+			* @noTrigger: Aktion ausführen: false, sonst true
+			*/
+			previous: function(noTrigger){
+                customHistory.executeBack(_.bind(function(previous) {
+                    this.route(previous, noTrigger);
+                }, this));
+			},
+			/*
+			* Wenn nötig Daten vom Server laden, Seite rendern und Seitenübergang vollführen
+			* @c: Controllername
+			* @a: Actionsname
+			* @url: anzufragende URL oder Objekt mit Daten für den View
+			* @transition: Als String: jQueryMobile-Pagetransitionsname (Standard: slide),
+						   Oder als Objekt: Parameter für das Rendern des View
+			*/
+			loadPage: function(c, a, params, transition) {
+				params = params || {};
+				var q = Q.defer();
+
+				var page = viewContainer.prepareViewForDomDisplay(c, params);
+
+				// FIXME Transition parameter is ignored
+				var transitionOptions = {
+					page: page,
+					extras: {
+						c: c,
+						a: a,
+						page: page,
+						params: params,
+						q: q
+					},
+					route: {
+						from: customHistory.currentRoute(),
+						to: Backbone.history.fragment
+					}
+				};
+				pageContainer.executeTransition(transitionOptions);
+
+				return q.promise;
+			},
+
+			/**
+			* Globale Events setzen
+			*/
+			bindEvents:function(){
+				var self = this;
+				$.ajaxSetup({
+					  "error":function() { //Globale AJAX-Fehlerfunktion, wenn z.B. keine Internetverbindung besteht
+						  app.locked = false;
+						  viewContainer.notifyMissingServerConnection(app);
+					  }
+				});
+
+				$(document).on('click', 'a[data-rel="back"]', function(){ //Backbutton clicks auf zurücknavigieren mappen
+					customHistory.goBack();
+				});
 			}
 		});
 
-		return new Application();
+		return app;
 });

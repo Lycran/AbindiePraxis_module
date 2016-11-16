@@ -1,0 +1,14 @@
+<% if (meals.length > 0) { %>
+	<% if (location === "UlfsCafe") { %>
+	<div class="up-mensa-name">Ulf's Café im HPI</div>
+	<% } %>
+<div data-role="collapsible-set" data-collapsed="false" data-iconpos="right" data-collapsed-icon="arrow-down" data-expanded-icon="arrow-up" class="speiseplan">
+</div>
+<% } else if(location !== "UlfsCafe") { %>
+<div>
+	<br />
+	<img src="img/up/hinweis.png" class="alignleft">
+	<p class="blau" style="margin-left:55px;">Heute gibt es kein Essensangebot. Vielleicht ist die Mensa geschlossen?</p>
+	<div style="clear: both;"></div>
+</div>
+<% } %>

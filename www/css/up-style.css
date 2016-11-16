@@ -66,6 +66,10 @@ p {
 	margin: .3em;
 }
 
+a{
+	cursor:pointer;
+}
+
 .nomargin {
 	margin: 0 !important;
 }
@@ -183,6 +187,18 @@ body .ui-btn.ui-btn-a.back:visited {
 	padding-bottom: 0px;
 }
 
+/*Backbutton mit Text statt Pfeil*/
+.back-caption {
+  width: 50px !important;
+  text-indent: 0 !important;
+  color: #014260 !important;
+  background-image:none !important;
+  background-repeat:no-repeat !important;
+  background-position:-400px;
+  background: none !important;
+  margin-top: 20px !important;
+}
+
 /*default buttons links */
 .ui-btn-icon-left:after,.ui-btn-icon-right:after {
 	background-color: #014260;
@@ -223,8 +239,8 @@ body .ui-btn.ui-btn-a.back:visited {
 */
 
 /*tabs*/
-.ui-navbar li {
-	border-right: 2px solid #fff;
+.ui-tabs {
+	padding: 0;
 }
 
 .ui-navbar li:last-child {
@@ -241,7 +257,7 @@ body .ui-btn.ui-btn-a.back:visited {
 	width: 100%;
 	padding-left: 0;
 	padding-right: 0;
-	display: inline-block;
+	display: block;
 	line-height: 35px
 }
 
@@ -326,8 +342,7 @@ label.showfirst {
 	margin-right: 10px;
 	margin-left: 10px;
 }
-
-.closed,.lent {
+.marker.closed, .marker.close, .lent {
 	display: block;
 	float: left;
 	height: 20px;
@@ -339,8 +354,7 @@ label.showfirst {
 	margin-right: 10px;
 	margin-left: 10px;
 }
-
-.open,.available {
+.marker.open {
 	display: block;
 	float: left;
 	height: 20px;
@@ -352,6 +366,38 @@ label.showfirst {
 	margin-right: 10px;
 	margin-left: 10px;
 }
+
+/* Time bars
+-------------------- */
+.timebar.closed {
+	border-top: 2px solid #ededed;
+	border-bottom: 2px solid #ededed;
+}
+/* background-color: #990808; */
+.timebar.open {
+	background: rgba(255, 255, 255, 0.85);
+	margin-left: -2px;
+	border: 1px solid #000;
+	border-radius: 5px;
+}
+td.day {
+	white-space: nowrap;
+	background: #ededed;
+}
+td.times {
+	width: 99%;
+	padding: 3px 0px 1px 2px;
+	background: #ededed url(../img/up/opening-timesbar.png) no-repeat center left / 100% 80%;
+}
+td.timestext {
+	white-space: nowrap;
+	background: #ededed;
+}
+div.timebar {
+	height: 20px;
+	display: inline-block;
+}
+
 
 .lent,.prebook,.available {
 	margin-left: 0;
@@ -408,7 +454,9 @@ label.showfirst {
 	top: 55%;
 	left: .1em !important;
 }
-
+.home-id a {
+	color:#FFF !important;
+}
 #home .ui-btn.settings:active {
 	background-color: transparent;
 }
@@ -596,6 +644,76 @@ label.showfirst {
 	display: block;
 }
 
+/**** Tipps ***********************************
+----------------------------------------------*/
+.tipp-title-container {
+	margin-top: .5em;
+	margin-bottom: .5em;
+	padding-top: .5em;
+	padding-bottom: .5em;
+	background-color: #014260;
+	color: #fff;
+}
+
+.tipp-title-container h2 {
+	/*color: #014260;*/
+	font-weight: bold;
+}
+
+.tipp-title-container .tipp-detail {
+	margin-left: 1em;
+	font-style: italic;
+	/*font-size: 12px;*/
+}
+
+.tipp-image-container {
+	margin-top: .5em;
+	margin-bottom: .5em;
+	padding-top: .5em;
+	padding-bottom: .5em;
+	min-height: 100px;
+	/*color: #014260;*/
+	/*background-color: #ededed;*/
+	background-color: #014260;
+	color: #fff;
+}
+
+.tipp-image {
+	width: 100px;
+	float: left;
+	margin-left: .5em;
+}
+
+.tipp-image-container h2 {
+	margin-top: .5em;
+	margin-bottom: .5em;
+	margin-left: 115px;
+	font-weight: bold;
+}
+
+.tipp-image-container .tipp-detail {
+	margin-left: 115px;
+	font-style: italic;
+	/*font-size: 12px;*/
+}
+
+p.tipp-description {
+	padding-top: .5em;
+	padding-left: .5em;
+	padding-right: .5em;
+	padding-bottom: .5em;
+	/*margin-bottom: 1em;*/
+	/*background-color: #ededed;*/
+	/*border-color: #ccc;*/
+}
+
+#tipp-content .ui-listview {
+	margin-top: .5em;
+	margin-bottom: .5em;
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
 /*************************************MAp************************************
 *******************************************************************************/
 
@@ -714,9 +832,12 @@ label.showfirst {
 }
 
 #sitemap #sitemaps-settings .options-close {
-	background-color:#014260;
-	color:#fff;
+	background-color: #014260;
+	color: #fff;
+}
 
+.similar-locations-reset {
+	background: #ededed !important;
 }
 
 /***************Öffnungszeiten********************
@@ -848,6 +969,12 @@ ui-collapsible-heading-toggle,li.ui-collapsible h3.ui-collapsible-heading a,ui-c
 .ui-table-reflow tbody th {
 	margin-top: .5em;
 }
+
+
+/*#opening div.timebar {
+	margin-right: 0px;
+	margin-left: 0px;
+}*/
 
 /*öffnungszeiten - button hover
 #opening.ui-page-theme-a ul .ui-btn:hover {
@@ -1021,7 +1148,6 @@ ui-collapsible-heading-toggle,li.ui-collapsible h3.ui-collapsible-heading a,ui-c
 	max-width: 600px;
 }
 
-#opening .ui-table td,
 #transport2 .ui-table td {
 	padding-top: 0px;
 	padding-bottom: 0px;
@@ -1786,7 +1912,7 @@ li.book-short:hover div.media_x,li.book-short:active div.media_x {
 }
 
 #peopleContent .ui-collapsible-inset {
-	
+
 	margin:0 0;
 }
 
@@ -2419,7 +2545,7 @@ p.event-description {
 		background-image: url(..img/red/media_x_big_hr.png) !important;
 		background-size: 55px 55px;
 	}
-	
+
 	.mail {
 	background-image: url(../img/up/mail-small_hr.png) !important;
 	background-repeat: no-repeat;
@@ -2609,11 +2735,27 @@ p.event-description {
 	background-color: rgb(207, 218, 227);
 }
 
-#gradesTable .wordwrap { 
-	white-space: pre-wrap;      /* CSS3 */   
-	white-space: -moz-pre-wrap; /* Firefox */   
-	white-space: -o-pre-wrap;   /* Opera 7 */    
+#gradesTable .wordwrap {
+	white-space: pre-wrap;      /* CSS3 */
+	white-space: -moz-pre-wrap; /* Firefox */
+	white-space: -o-pre-wrap;   /* Opera 7 */
 	word-wrap: break-word;      /* IE */
+}
+
+#gradesselection p {
+	color: #fff;
+	font-size: .9em;
+	margin-bottom: 1em;
+
+	padding: .3em;
+	color: #014260;
+	font-family: georgia,serif;
+	font-style: italic;
+	text-align: center;
+	margin-top: 1em;
+}
+#gradesselection p.finished {
+	font-weight:bold;
 }
 
 /*calendar export*/
@@ -2621,7 +2763,7 @@ p.event-description {
 	    color: #fff;
     font-size: .9em;
     margin-bottom: 1em;
-   
+
     padding: .3em;
     color: #014260;
     font-family: georgia,serif;
@@ -2630,6 +2772,33 @@ p.event-description {
     margin-top: 1em;
 }
 #calendarexport p.finished {
+	font-weight:bold;
+}
+
+#emptyListNotifier p {
+	font-size: .9em;
+	margin-bottom: 1em;
+	padding: .3em;
+	color: #014260;
+	font-family: georgia,serif;
+	font-style: italic;
+	text-align: center;
+	margin-top: 1em;
+}
+
+#mail p {
+	color: #fff;
+	font-size: .9em;
+	margin-bottom: 1em;
+
+	padding: .3em;
+	color: #014260;
+	font-family: georgia,serif;
+	font-style: italic;
+	text-align: center;
+	margin-top: 1em;
+}
+#mail p.finished {
 	font-weight:bold;
 }
 
@@ -2647,4 +2816,13 @@ p.event-description {
 .in, .out {
 	-webkit-animation-timing-function: ease-in-out;
 	-webkit-animation-duration: 200ms !important;
+}
+
+/*OS Differences*/
+
+.ios-statusbar .ui-header, .ios-statusbar .ui-content{
+	padding-top:25px !important;
+}
+.ios-statusbar .settings{
+	margin-top:40px !important;
 }

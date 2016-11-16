@@ -8,7 +8,7 @@ define([
 		
 		history: [],
 		
-		startTracking: function() {
+		startTracking: function(baseUrl) {
 			// Because we track our own history, we have to consider the replace option
 			// See http://backbonejs.org/#Router-navigate and {replace: true} for details
 			var that = this;
@@ -18,30 +18,51 @@ define([
 				if (options && options.replace) {
 					that.history.pop();
 				}
-				
+				that.push(fragment);
+
 				// Call original function
 				savedNavigate.apply(this, arguments);
 			};
+
+			Backbone.history.start({pushState: false, root: baseUrl});
 		},
-		
+
+		/**
+		 * Called by back button handler and by click on a[data-rel="back"]. Uses this.executeBack() internally
+		 */
 		goBack: function() {
-			var lastPage = this.history[this.history.length-2].name;
-			this.history.pop();
-			Backbone.history.navigate(lastPage, {trigger:true});
+			this.executeBack(function(lastPage) {
+				Backbone.history.navigate(lastPage, {trigger:true, replace:true});
+			});
+		},
+
+		/**
+		 * Called by app.previous()
+		 * @param callback
+		 */
+		executeBack: function(callback) {
+			if(this.history[this.history.length - 2]) {
+				this.history.pop();
+				callback(this.history[this.history.length - 1].name);
+			}
 		},
 		
 		push: function(route) {
 			this.history.push({name: route});
 		},
 		
-		hasHistory: function() {
-			return this.history.length > 0;
-		},
-		
 		currentRoute: function() {
-			return this.history[this.history.length-1].name;
+			if (this.history.length > 0) {
+				return this.history[this.history.length-1].name;
+			} else {
+				return undefined;
+			}
 		},
-		
+
+		/**
+		 * Called by back button handler
+		 * @returns {Number}
+		 */
 		length: function() {
 			return this.history.length;
 		}

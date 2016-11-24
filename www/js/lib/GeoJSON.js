@@ -1,4 +1,6 @@
 define([], function(){
+	var lastInfoWindow = undefined;
+
 	var GeoJSON = function( geojson, options, map, hasSimilarsCallback ){
 
 		var map = map;
@@ -7,7 +9,7 @@ define([], function(){
 		/*
 		 * binds click event to marker with given description
 		 */
-		var addInfoWindow = function(map, googleObj, geojsonProperties, anchorPoint) {
+		var addInfoWindow = function(map, googleObj, geojsonProperties, anchorPoint, anchorObject) {
 			if(geojsonProperties) {
 				if (geojsonProperties.Name) {
 					var desc = geojsonProperties.description ? '<br><br>'+geojsonProperties.description.replace(/\n/g, '<br>') : "<br><br>Keine Beschreibung verfügbar";
@@ -26,7 +28,14 @@ define([], function(){
 					googleObj.info.setPosition(position);
 
 					google.maps.event.addListener(googleObj,'click',function() {
-						googleObj.info.open(map);
+						// Close other InfoWindow
+						if (lastInfoWindow) {
+							lastInfoWindow.close();
+						}
+
+						// Open this InfoWindow
+						googleObj.info.open(map, anchorObject);
+						lastInfoWindow = googleObj.info;
 					});
 				}
 			}
@@ -54,6 +63,7 @@ define([], function(){
 			var googleObj, opts = _copy(options);
 			switch ( geojsonGeometry.type ){
 				case "Point":
+					opts.anchorPoint = new google.maps.Point(0, -15);
 					opts.position = new google.maps.LatLng(geojsonGeometry.coordinates[1], geojsonGeometry.coordinates[0]);
 					// checks for title and displays it on hover
 					if(geojsonProperties) {
@@ -62,7 +72,7 @@ define([], function(){
 						}
 					}
 					googleObj = new google.maps.Marker(opts);
-					addInfoWindow(map, googleObj, geojsonProperties);
+					addInfoWindow(map, googleObj, geojsonProperties, undefined, googleObj);
 					googleObj.set("geojsonProperties", geojsonProperties);
 					break;
 

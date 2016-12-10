@@ -494,6 +494,33 @@ label.showfirst {
 	margin-top: 0;
 }
 
+/*********************************books**********************************
+****************************************************************************/
+#books .ui-listview .ui-btn {
+	text-align: left;
+	display: block;
+	background-image: url(../img/up/phone.png);
+	background-position: 15px center;
+	background-repeat: no-repeat;
+	padding-left: 65px;
+	height: auto;
+	height: auto;
+}
+
+#books .ui-listview .ui-btn h2 {
+	text-transform: none;
+	font-size: .8em;
+	margin-bottom: 0 !important;
+}
+
+#books .ui-listview>li p {
+	white-space: normal;
+	text-transform: none;
+	width: 87%;
+	margin-top: 0;
+}
+
+
 /*************************************Mensa*********************************
 *****************************************************************************/
 .ui-body-c .speiseplan a, body  .ui-group-theme-c .speiseplan a

@@ -1,0 +1,8 @@
+{
+  "name": "Jane Q. Public", 
+  "email": "jane@example.org",
+  "address": "Park Street 2, Springfield",
+  "expires": "2015-05-18",
+  "status": 0,
+  "type": ["http://example.org/usertypes/default"]
+}

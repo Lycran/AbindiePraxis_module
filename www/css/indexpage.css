@@ -224,6 +224,10 @@
 	background-image: url(../img/up/emergency.png);
 }
 
+#home .books {
+	background-image: url(../img/up/books.png);
+}
+
 #home .sports {
 	background-image: url(../img/up/sports.png);
 }

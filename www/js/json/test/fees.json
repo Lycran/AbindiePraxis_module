@@ -1,0 +1,20 @@
+{
+	"amount": 2.98,
+	"fee": [{
+		"amount": 0.99,
+		"date": "2016-06-20",
+		"about": "FEE TEXT",
+		"item": "URI ITEM",
+		"edition": "URI EDITION",
+		"feetype": "SERVICE",
+		"feeid": "URI"
+	}, {
+		"amount": 1.99,
+		"date": "2016-06-20",
+		"about": "FEE TEXT2",
+		"item": "URI ITEM2",
+		"edition": "URI EDITION2",
+		"feetype": "SERVICE2",
+		"feeid": "URI2"
+	}]
+}

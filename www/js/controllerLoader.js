@@ -7,6 +7,7 @@ define([
     "pmodules/news/controller",
     "pmodules/sitemap/controller",
     "pmodules/emergency/controller",
+    "pmodules/books/controller",
     "pmodules/rooms/controller",
     "pmodules/lectures/controller",
     "pmodules/moodle/controller",

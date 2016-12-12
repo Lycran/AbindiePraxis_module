@@ -3,8 +3,8 @@
     id="de.floriangoessler.upapp"
     android-packageName="de.floriangoessler.upapp"
     version="4.0.1"
-    android-versionCode="40003"
-    ios-CFBundleVersion="201612061636"
+    android-versionCode="40004"
+    ios-CFBundleVersion="201612121621"
     ios-CFBundleIdentifier="com.floriangoessler.Uni-Potsdam"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:gap="http://phonegap.com/ns/1.0">

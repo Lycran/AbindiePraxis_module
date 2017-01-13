@@ -56,15 +56,28 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 
 		render: function(){
 			this.$el.html(this.template({book: this.model.toJSON()}));
-			console.log(this.model.get("endtime"));
-			if(hasDept(this.model.get("endtime"))){
-				$(".expired").css("background-color", "red");
+			console.log("Abgabe:"+this.model.get("endtime"));
+			
+			var dept = false;
+			dept = hasDept(this.model.get("endtime"));
+			console.log(this.model.get("about")+" hat Schulden ->" + dept);
+			// var reminder = false;
+			// reminder = hasReminder(this.model.get("endtime"));
+
+			if(dept){
+				$(this.$el).append("<td>...<img src=\"img/up/dot_red_small%20.png\" width=\"15px\"/></td>");
 				console.log("You have Dept to pay!");
 				alert("Ihr Buch: "+this.model.get("about")+" muss zurückgegeben bzw. verlängert werden!");
 			}
 			else{
-				$(".expired").css("background-color", "white");
+				$(this.$el).append("<td>...<img src=\"img/up/dot_green_small.png\" width=\"15px\"/></td>");
 			}
+
+			// if(reminder){
+			// 	$(".expired").css("background-color", "orange");
+			// 	console.log("Rückgabe-Erinnerung");
+			// 	alert("Ihr Buch: "+this.model.get("about")+" muss bald zurückgegeben werden");
+			// }
 
 			return this;
 		},
@@ -94,14 +107,20 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			var day = date.substr(8,2).valueOf();
 			var hasDept = false;
 
-			var d1 = new Date(year, month, day, 0, 0, 0, 0);
-			var heute = new Date();
-			var error = heute-d1;
+			var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
+			var heute =  Date.now();
+			
+			error = heute-ausgeliehen.getTime();
 
+			console.log("Tage:"+error/(1000 * 60 * 60 * 24));
+	
 			if(error > 0 ) 
 				hasDept = true;
+			else if(error > -3*24*60*60*1000)
+				console.log("Rückgabe-Erinnerung");
 			return hasDept;
 	};
+
 
 // BOOK COLLECTION VIEW
 	var BookCollectionView = Backbone.View.extend({
@@ -124,14 +143,16 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 
 		render: function(){
 			var html = "<br><b>Ausgeliehene Bücher und Rückgabedatum<b><br><table>";
-
+			//var number = 0;
 	  		this.$el.html(html);
 
 			this.collection.each(function(book){
 				var bookView = new BookView({model: book});
+				//$(this.el).append("<div id=\""+number+"\">");
 				$(this.el).append("<tr>");
 				$(this.el).append(bookView.render().el);
 				$(this.el).append("</tr>");
+				//$(this.el).append("</div>");
 			}, this);
 
 			$(this.el).append("</table>");

@@ -9,7 +9,7 @@
     "renewals": 0,
     "reminder": 0,
     "starttime": "2014-05-08T12:37Z",
-    "endtime": "2014-06-09",
+    "endtime": "2019-06-09",
     "cancancel": false
     },{
     "status": 1,
@@ -18,18 +18,7 @@
     "label": "BIO SED 03",
     "queue": 1,
     "starttime": "2014-05-12T18:07Z",
-    "endtime": "2014-05-24",
-    "cancancel": true,
-    "storage": "pickup service desk",
-    "storageid": "http://bib.example.org/library/desk/7"
-    },{
-    "status": 1,
-    "item": "http://bib.example.org/8831930",
-    "about": "Aaron Aaranovitch (2010): Die Flüsse von London",
-    "label": "ROM FAN 110",
-    "queue": 1,
-    "starttime": "2018-05-12T18:07Z",
-    "endtime": "2018-05-24",
+    "endtime": "2019-05-24",
     "cancancel": true,
     "storage": "pickup service desk",
     "storageid": "http://bib.example.org/library/desk/7"
@@ -44,5 +33,16 @@
     "cancancel": true,
     "storage": "pickup service desk",
     "storageid": "http://bib.example.org/library/desk/1"
+    },{
+    "status": 1,
+    "item": "http://bib.example.org/8831930",
+    "about": "Aaron Aaranovitch (2010): Die Flüsse von London",
+    "label": "ROM FAN 110",
+    "queue": 1,
+    "starttime": "2017-01-12T18:07Z",
+    "endtime": "2017-01-14",
+    "cancancel": true,
+    "storage": "pickup service desk",
+    "storageid": "http://bib.example.org/library/desk/7"
   }]
 }

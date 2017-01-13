@@ -1,7 +1,7 @@
 {
-  "name": "Jane Q. Public", 
-  "email": "jane@example.org",
-  "address": "Park Street 2, Springfield",
+  "name": "Max G. Mustermann", 
+  "email": "mustermann@example.org",
+  "address": "Hauptstraße 15, Buxhausen",
   "expires": "2015-05-18",
   "status": 0,
   "type": ["http://example.org/usertypes/default"]

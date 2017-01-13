@@ -13,7 +13,7 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			type: null,
 			amount: null,
 		},
-});
+	});
 
 	var FeeModel = Backbone.Model.extend({
 		url : 'js/json/test/fees.json'
@@ -58,11 +58,13 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			this.$el.html(this.template({book: this.model.toJSON()}));
 			console.log(this.model.get("endtime"));
 			if(hasDept(this.model.get("endtime"))){
+				$(".expired").css("background-color", "red");
 				console.log("You have Dept to pay!");
-				($(".expired").css("background-color", "red"));
+				alert("Ihr Buch: "+this.model.get("about")+" muss zurückgegeben bzw. verlängert werden!");
 			}
-			else
-				($(".expired").css("background-color", "white"));
+			else{
+				$(".expired").css("background-color", "white");
+			}
 
 			return this;
 		},
@@ -99,10 +101,9 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			if(error > 0 ) 
 				hasDept = true;
 			return hasDept;
-		};
+	};
 
-
-
+// BOOK COLLECTION VIEW
 	var BookCollectionView = Backbone.View.extend({
 
 		initialize: function(){
@@ -122,21 +123,26 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		},
 
 		render: function(){
-			var html = "<br><b>Ausgeliehene Bücher und Rückgabedatum<b><br>";
+			var html = "<br><b>Ausgeliehene Bücher und Rückgabedatum<b><br><table>";
+
 	  		this.$el.html(html);
 
 			this.collection.each(function(book){
 				var bookView = new BookView({model: book});
+				$(this.el).append("<tr>");
 				$(this.el).append(bookView.render().el);
+				$(this.el).append("</tr>");
 			}, this);
+
+			$(this.el).append("</table>");
 
 			return this;
 		}
 	});
 
 
+// PATRON MODEL VIEW
 	var PatronModelView = Backbone.View.extend({
-//		anchor: '#patron-info',
 
 		initialize: function(){
 			_.bindAll(this, 'fetchSuccess', 'fetchError', 'render');
@@ -158,23 +164,17 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		},
 
 	  	render: function() {
-//	  		this.el = $(this.anchor);
 	  		this.$el.html(this.template({patron: this.model.toJSON()}));
 		    return this;
 		}
 	});
 
-
-
-
-
 	
-//	LANDING PAGE VIEW
+//	MAIN PAGE VIEW
 	app.views.BooksPage = Backbone.View.extend({
 
 		initialize: function() {
 			this.template = rendertmpl('booksPage');
-
 		},
 
 		render: function() {
@@ -183,10 +183,17 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			var profile = new PatronModel();
 			var fees = new FeeModel();
 			fees.fetch();
+			fees.save();
+			
 			profile.fetch().then(function(){
 				profile.set("amount", fees.get("amount"));
+				if(profile.get("amount")>0){
+					alert("Es sind Gebühren fällig");
+					console.log("Gebühren:"+profile.get("amount"));
+				}
 				profile.save();
 			});
+
 			
 			var profileView = new PatronModelView( {model : profile});
 			this.$el.append(profileView.render().el);
@@ -199,6 +206,24 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			return this;
 		}
 	});
+
+
+// LOGIN PAGE VIEW
+	app.views.BooksPageLogin = Backbone.View.extend({
+
+		initialize: function(){
+			this.template = rendertmpl('login');
+
+		},
+
+		render: function() {
+			this.$el.html(this.template({}));
+			this.$el.trigger("create");
+			return this;
+		}
+	});
+
+
 
 	return app.views.BooksPage;
 });

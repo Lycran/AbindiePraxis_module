@@ -1,5 +1,20 @@
-<b>USER: </b><i><%= patron.name %></i><br>
-<b>E-MAIL: </b><i><%= patron.email %></i><br>
-<b>EXPIRES: </b><i><%= patron.expires %></i><br>
-<b>FEES: </b><i><%= patron.amount %>€</i><br>
-
+<div style="padding: 10px">
+	<table>
+		<tr>
+			<td><b>USER:</b></td>
+			<td><%= patron.name %></td>
+		</tr>
+		<tr>
+			<td><b>E-MAIL:</b></td>	
+			<td><%= patron.email %></td>
+		</tr>
+		<tr>
+			<td><b>GÜLTIG BIS:</b></td>
+			<td><%= patron.expires %></td>
+		</tr>
+		<tr>
+			<td><b>GEBÜHREN:</b></td>	
+			<td><%= patron.amount %>€</td>
+		</tr>
+	</table>
+<div>

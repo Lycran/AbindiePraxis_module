@@ -11,7 +11,7 @@
     "starttime": "2014-05-08T12:37Z",
     "endtime": "2014-06-09",
     "cancancel": false
-  },{
+    },{
     "status": 1,
     "item": "http://bib.example.org/8861930",
     "about": "Janet B. Pascal (2013): Who was Maurice Sendak?",
@@ -22,14 +22,25 @@
     "cancancel": true,
     "storage": "pickup service desk",
     "storageid": "http://bib.example.org/library/desk/7"
-  },{
+    },{
+    "status": 1,
+    "item": "http://bib.example.org/8831930",
+    "about": "Aaron Aaranovitch (2010): Die Flüsse von London",
+    "label": "ROM FAN 110",
+    "queue": 1,
+    "starttime": "2018-05-12T18:07Z",
+    "endtime": "2018-05-24",
+    "cancancel": true,
+    "storage": "pickup service desk",
+    "storageid": "http://bib.example.org/library/desk/7"
+    },{
     "status": 1,
     "item": "http://bib.example.org/8861930",
     "about": "Hattori H. Hanzo (1503): Learn Japanese in 3 Hours",
     "label": "EDU SED 01",
     "queue": 1,
     "starttime": "2014-05-12T18:07Z",
-    "endtime": "2016-12-12",
+    "endtime": "2015-01-01",
     "cancancel": true,
     "storage": "pickup service desk",
     "storageid": "http://bib.example.org/library/desk/1"

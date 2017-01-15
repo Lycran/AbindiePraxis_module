@@ -40,7 +40,7 @@
     "label": "ROM FAN 110",
     "queue": 1,
     "starttime": "2017-01-12T18:07Z",
-    "endtime": "2017-01-14",
+    "endtime": "2017-01-18",
     "cancancel": true,
     "storage": "pickup service desk",
     "storageid": "http://bib.example.org/library/desk/7"

@@ -1,19 +1,19 @@
 <div style="padding: 10px">
-	<table>
+	<table id="booksPatronTable">
 		<tr>
-			<td><b>USER:</b></td>
+			<td style="text-align: right"><b>USER:</b></td>
 			<td><%= patron.name %></td>
 		</tr>
 		<tr>
-			<td><b>E-MAIL:</b></td>	
+			<td style="text-align: right"><b>E-MAIL:</b></td>	
 			<td><%= patron.email %></td>
 		</tr>
 		<tr>
-			<td><b>GÜLTIG BIS:</b></td>
+			<td style="text-align: right"><b>GÜLTIG BIS:</b></td>
 			<td><%= patron.expires %></td>
 		</tr>
 		<tr>
-			<td><b>GEBÜHREN:</b></td>	
+			<td style="text-align: right"><b>GEBÜHREN:</b></td>	
 			<td><%= patron.amount %>€</td>
 		</tr>
 	</table>

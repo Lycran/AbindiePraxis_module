@@ -3,7 +3,7 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 
 //	MODELS 
 	var PatronModel = Backbone.Model.extend({
-		url: 'js/json/test/patron.json'	,
+		url: 'js/json/booksModule/patron.json'	,
 		defaults: {
 			name: null,
 			email: null,
@@ -16,7 +16,7 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 	});
 
 	var FeeModel = Backbone.Model.extend({
-		url : 'js/json/test/fees.json'
+		url : 'js/json/booksModule/fees.json'
 	});
 
 	var BookModel = Backbone.Model.extend({
@@ -36,7 +36,7 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 	});
 
 	var BookCollection = Backbone.Collection.extend({
-		url: 'js/json/test/items.json',
+		url: 'js/json/booksModule/items.json',
 		comparator: 'item',
 		model: BookModel,
 
@@ -58,26 +58,25 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			this.$el.html(this.template({book: this.model.toJSON()}));
 			console.log("Abgabe:"+this.model.get("endtime"));
 			
-			var dept = false;
-			dept = hasDept(this.model.get("endtime"));
-			console.log(this.model.get("about")+" hat Schulden ->" + dept);
+			var dept = hasDept(this.model.get("endtime"));
+			
 			// var reminder = false;
 			// reminder = hasReminder(this.model.get("endtime"));
 
 			if(dept){
-				$(this.$el).append("<td>...<img src=\"img/up/dot_red_small%20.png\" width=\"15px\"/></td>");
-				console.log("You have Dept to pay!");
+				$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/dot_red_small%20.png\" width=\"15px\"/></td>");
 				alert("Ihr Buch: "+this.model.get("about")+" muss zurückgegeben bzw. verlängert werden!");
 			}
 			else{
-				$(this.$el).append("<td>...<img src=\"img/up/dot_green_small.png\" width=\"15px\"/></td>");
+			// wenn Buch bald zurückgegeben werden muss --> wird der Button orange
+				if(hasReminder(this.model.get("endtime"))){
+					$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/dot_orange_small.png\" width=\"15px\"/></td>");
+					alert("Erinnerung: Ihr Buch "+this.model.get("about")+" muss bald zurückgegeben bzw. verlängert werden!");
+				}
+			
+				else
+					$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/dot_green_small.png\" width=\"15px\"/></td>");
 			}
-
-			// if(reminder){
-			// 	$(".expired").css("background-color", "orange");
-			// 	console.log("Rückgabe-Erinnerung");
-			// 	alert("Ihr Buch: "+this.model.get("about")+" muss bald zurückgegeben werden");
-			// }
 
 			return this;
 		},
@@ -106,22 +105,29 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			var month = date.substr(5,2).valueOf();
 			var day = date.substr(8,2).valueOf();
 			var hasDept = false;
-
 			var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
 			var heute =  Date.now();
-			
 			error = heute-ausgeliehen.getTime();
-
-			console.log("Tage:"+error/(1000 * 60 * 60 * 24));
 	
 			if(error > 0 ) 
 				hasDept = true;
-			else if(error > -3*24*60*60*1000)
-				console.log("Rückgabe-Erinnerung");
 			return hasDept;
 	};
 
-
+	var hasReminder = function(date){
+			var year = date.substr(0,4).valueOf();
+			var month = date.substr(5,2).valueOf();
+			var day = date.substr(8,2).valueOf();
+			var hasReminder = false;
+			var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
+			var heute =  Date.now();
+			error = heute-ausgeliehen.getTime();
+	
+			if(error > -3*24*60*60*1000)
+				hasReminder=true;
+			console.log("Rückgabe-Erinnerung");
+			return hasReminder;
+	};
 // BOOK COLLECTION VIEW
 	var BookCollectionView = Backbone.View.extend({
 
@@ -142,21 +148,15 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		},
 
 		render: function(){
-			var html = "<br><b>Ausgeliehene Bücher und Rückgabedatum<b><br><table>";
-			//var number = 0;
+			var html = "<div style=\"padding-left:10px\"><br><b>Ausgeliehene Bücher und Rückgabedatum<b><br></div><table>";
 	  		this.$el.html(html);
-
 			this.collection.each(function(book){
 				var bookView = new BookView({model: book});
-				//$(this.el).append("<div id=\""+number+"\">");
 				$(this.el).append("<tr>");
 				$(this.el).append(bookView.render().el);
 				$(this.el).append("</tr>");
-				//$(this.el).append("</div>");
 			}, this);
-
 			$(this.el).append("</table>");
-
 			return this;
 		}
 	});
@@ -200,29 +200,23 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 
 		render: function() {
 			this.$el.html(this.template({}));
-
 			var profile = new PatronModel();
 			var fees = new FeeModel();
 			fees.fetch();
 			fees.save();
-			
 			profile.fetch().then(function(){
 				profile.set("amount", fees.get("amount"));
-				if(profile.get("amount")>0){
+				if(profile.get("amount")>0)
 					alert("Es sind Gebühren fällig");
-					console.log("Gebühren:"+profile.get("amount"));
-				}
 				profile.save();
 			});
 
 			
 			var profileView = new PatronModelView( {model : profile});
 			this.$el.append(profileView.render().el);
-
 			var items = new BookCollection();
 			var itemView = new BookCollectionView({collection: items});
 			this.$el.append(itemView.render().el);
-
 			this.$el.trigger("create");
 			return this;
 		}
@@ -243,8 +237,6 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			return this;
 		}
 	});
-
-
 
 	return app.views.BooksPage;
 });

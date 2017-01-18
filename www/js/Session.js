@@ -82,6 +82,8 @@ define([
             this.unset('up.session.username');
             this.unset('up.session.password');
             this.unset('up.session.MoodleToken');
+            // delete UBauthenticated flag as well
+            this.unset('up.session.UBauthenticated');
         },
 
         generateLoginURL: function(credentials){

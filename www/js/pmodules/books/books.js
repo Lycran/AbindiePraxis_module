@@ -191,32 +191,32 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 	});
 
 	
-//	MAIN PAGE VIEW
-	app.views.BooksPage = Backbone.View.extend({
 
-		initialize: function() {
-			this.template = rendertmpl('booksPage');
+
+
+// LOGIN PAGE VIEW
+	app.views.BooksLogin = Backbone.View.extend({
+
+		events: {
+			'submit #loginform': 'login',
+			'focus #loginform input': 'clearForm'
+		},
+
+		login: function(ev){
+			ev.preventDefault();
+			app.session.set('up.session.UBauthenticated', true);	
+			// try to log in
+			// if success
+			app.route('books');
+			//else do error handling
 		},
 
 		render: function() {
-			this.$el.html(this.template({}));
-			var profile = new PatronModel();
-			var fees = new FeeModel();
-			fees.fetch();
-			fees.save();
-			profile.fetch().then(function(){
-				profile.set("amount", fees.get("amount"));
-				if(profile.get("amount")>0)
-					alert("Es sind Gebühren fällig");
-				profile.save();
-			});
 
-			
-			var profileView = new PatronModelView( {model : profile});
-			this.$el.append(profileView.render().el);
-			var items = new BookCollection();
-			var itemView = new BookCollectionView({collection: items});
-			this.$el.append(itemView.render().el);
+			this.logouttemplate = rendertmpl('login');
+			this.setElement(this.page.find('#books'));
+			this.$el.html(this.logouttemplate({}));
+
 			this.$el.trigger("create");
 			return this;
 		}
@@ -224,15 +224,61 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 
 
 // LOGIN PAGE VIEW
-	app.views.BooksPageLogin = Backbone.View.extend({
+	app.views.BooksLogout = Backbone.View.extend({
 
-		initialize: function(){
-			this.template = rendertmpl('login');
+		events:{
+			'submit #logoutform': 'logout'
+		},
 
+
+		logout: function(ev){
+			// do logout
+			app.route('');
 		},
 
 		render: function() {
+			this.logouttemplate = rendertmpl('logout');
+			this.setElement(this.page.find('#books'));
+			this.$el.html(this.logouttemplate({}));
+
+			this.$el.trigger("create");
+			return this;
+		}
+	});
+
+
+
+	//	MAIN PAGE VIEW
+	app.views.BooksPage = Backbone.View.extend({
+		attributes: {"id": 'books'},
+
+		initialize: function(){
+			this.template = rendertmpl('booksPage');
+		},
+
+		render: function(){
 			this.$el.html(this.template({}));
+			if (app.session.get('up.session.UBauthenticated', true)){
+
+
+				var profile = new PatronModel();
+				var fees = new FeeModel();
+				fees.fetch();
+				fees.save();
+				profile.fetch().then(function(){
+					profile.set("amount", fees.get("amount"));
+					if(profile.get("amount")>0)
+						alert("Es sind Gebühren fällig");
+					profile.save();
+				});
+
+				
+				var profileView = new PatronModelView( {model : profile});
+				this.$el.append(profileView.render().el);
+				var items = new BookCollection();
+				var itemView = new BookCollectionView({collection: items});
+				this.$el.append(itemView.render().el);
+			}
 			this.$el.trigger("create");
 			return this;
 		}

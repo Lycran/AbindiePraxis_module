@@ -77,7 +77,6 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 				else
 					$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/dot_green_small.png\" width=\"15px\"/></td>");
 			}
-
 			return this;
 		},
 
@@ -157,6 +156,7 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 				$(this.el).append("</tr>");
 			}, this);
 			$(this.el).append("</table>");
+			this.$el.trigger("create");
 			return this;
 		}
 	});

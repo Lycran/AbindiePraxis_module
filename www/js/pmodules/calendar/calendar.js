@@ -19,11 +19,12 @@ define([
 
 		initialize: function(){
 			this.template = rendertmpl('calendar_day');
-			this.listenTo(this.collection, "timeslotsReady", this.render);
+			this.listenTo(this.collection, "timeSlotsReady", this.render);
 		},
 
 		render: function(){
-			this.$el.html(this.template({CourseSlots: this.collection}));
+			console.log(this.collection);
+			this.$el.html(this.template({CourseSlots: this.collection, moment: moment}));
 			this.$el.trigger("create");
 			return this;
 		}
@@ -35,7 +36,7 @@ define([
 	 * 	Main View fpr calendar
 	 */
 	app.views.CalendarPage = utils.GesturesView.extend({
-		
+
 		attributes: {"id": "calendar"},
 
 		events: {
@@ -57,7 +58,6 @@ define([
 			this.CourseList = new calendar.CourseList();
 
 			this.listenTo(this.CourseList, "error", this.errorHandler);
-			this.listenTo(this.CourseList, "coursesEmpty", this.coursesEmpty);
 
 			this.listenToOnce(this, "prepareCourses", this.loadData);
 			this.listenTo(this, 'errorHandler', this.errorHandler);
@@ -85,6 +85,9 @@ define([
 
 			this.loadingView = new utils.LoadingView({collection: this.CourseList, el: this.$("#loadingSpinner")});
 			new CalendarDayView({collection: courseSlots, el: this.$("#coursesForDay")});
+			this.listenTo(courseSlots, "coursesEmpty", this.coursesEmpty);
+
+			console.log('load data');
 
 			this.CourseList.fetch(utils.cacheDefaults());
 		},
@@ -104,13 +107,12 @@ define([
 				el: this.$('#coursesForDay'),
 				msg: 'Keine Kurse gefunden.',
 				module: 'calendar',
-				err: error,
 				hasReload: true
 			}).on("reload", this.loadData, this);
 		},
 
 		render: function(){
-			this.$el.html(this.template({day: this.day}));
+			this.$el.html(this.template({day: this.day, moment: moment}));
 			this.$el.trigger("create");
 			this.trigger("prepareCourses");
 			return this;

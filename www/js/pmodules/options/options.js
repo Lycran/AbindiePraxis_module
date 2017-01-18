@@ -5,9 +5,70 @@ define([
 		'underscore',
 		'backbone',
 		'Session',
+		'pmodules/options/options.login',
 		'utils'
-], function($, _, Backbone, Session, utils){
+], function($, _, Backbone, Session, login, utils){
 	var rendertmpl = _.partial(utils.rendertmpl, _, "js/pmodules/options");
+
+	function TimerHelper(model, view) {
+		this.loginAttempts = 0;
+		this.loginCountdown = 0;
+
+		this.incrementLoginAttempt = function() {
+			this.loginAttempts++;
+			this.updateCountdown();
+		};
+
+		this.start = function(callback) {
+			this.timer = setInterval(function() {
+				callback();
+			}, 1000);
+		};
+
+		this.stop = function() {
+			clearInterval(this.timer);
+		};
+
+		this.unsetFailureTimer = function() {
+			//wenn login erfolgreich lösche failureTime
+			model.unset('up.session.loginFailureTime');
+		};
+
+		this.isLoginAllowed = function() {
+			return this.loginAttempts < 3 && this.loginCountdown == 0;
+		};
+
+		this.isCountdownActive = function() {
+			return this.loginCountdown > 0;
+		};
+
+		this.updateCountdown = function() {
+			if(this.loginAttempts >= 3 && !model.get('up.session.loginFailureTime')) {
+				model.set('up.session.loginFailureTime', new Date().getTime());
+				this.loginAttempts = 0;
+
+				view.render();
+				return;
+			}
+			if(model.get('up.session.loginFailureTime')){
+				this.loginCountdown = parseInt(model.get('up.session.loginFailureTime'))+2*60*1000 - new Date().getTime();
+				if (this.loginCountdown < 0) {
+					this.loginCountdown = 0;
+					model.unset('up.session.loginFailureTime');
+					clearInterval(this.timer);
+
+					this.registerCountdownTimerOnce = _.once(_.bind(this.registerCountdownTimer, this));
+				} else {
+					this.registerCountdownTimerOnce();
+				}
+			}
+		};
+
+		this.registerCountdownTimer = function() {
+			this.start(_.bind(view.render, view));
+		};
+		this.registerCountdownTimerOnce = _.once(_.bind(this.registerCountdownTimer, this));
+	}
 
 	app.views.OptionsLogin = Backbone.View.extend({
 		model: Session,
@@ -15,39 +76,36 @@ define([
 			'submit #loginform': 'login',
 			'focus #loginform input': 'clearForm'
 		},
+
 		initialize: function(p){
+			this.logintemplate = rendertmpl('login');
+
 			this.model = new Session();
-			this.loginAttempts = 0;
-			this.loginCountdown = 0;
-			_.bindAll(this, 'render', 'updateCountdown');
+			this.timerHelper = new TimerHelper(this.model, this);
+			_.bindAll(this, 'render');
 			//this.page = p.page;
 			this.listenTo(this.model,'change', this.render);
 			this.listenTo(this, 'errorHandler', this.errorHandler);
 			this.listenTo(this, 'missingConnection', this.missingInternetConnectionHandler);
-			this.listenToOnce(this, 'registerTimer', this.registerCountdownTimer);
 		},
+
 		errorHandler: function(){
-			this.loginAttempts++;
 			this.$("#error").css('display', 'block');
-			this.updateCountdown();
+			this.timerHelper.incrementLoginAttempt();
+		},
+
+		missingInternetConnectionHandler: function(){
+			this.$("#error0").css('display', 'block');
 		},
 
 		clearForm: function(){
 			this.$("#error").css('display', 'none');
 			this.$("#error0").css('display', 'none');
-			
 		},
 
 		stopListening: function() {
-			clearInterval(this.timer);
+			this.timerHelper.stop();
 			Backbone.View.prototype.stopListening.apply(this, arguments);
-		},
-
-
-		registerCountdownTimer: function() {
-			this.timer=setInterval(function() {
-				this.render();
-			}.bind(this), 1000);
 		},
 
 		formatCountdown: function(milsec){
@@ -57,80 +115,48 @@ define([
 			sec = formatLeadingZeroes(sec%60);
 			return min+":"+sec;
 		},
-		updateCountdown: function() {
-			if(this.loginAttempts>=3 && !this.model.get('up.session.loginFailureTime')){
-				this.model.set('up.session.loginFailureTime', new Date().getTime());
-				this.loginAttempts=0;
 
-				this.render();
-				return;
-			}
-			console.log(this.model);
-			if(this.model.get('up.session.loginFailureTime')){
-				this.loginCountdown = parseInt(this.model.get('up.session.loginFailureTime'))+10*60*1000 - new Date().getTime();
-				if(this.loginCountdown < 0){
-					this.loginCountdown = 0;
-					this.model.unset('up.session.loginFailureTime');
-					clearInterval(this.timer);
-					this.listenToOnce(this, 'registerTimer', this.registerCountdownTimer);
-				}else{
-					this.trigger('registerTimer');
-				}
-			}
-		},
 		login: function(ev){
 			ev.preventDefault();
-			console.log(this);
-			this.updateCountdown();
 
-			if(this.loginAttempts < 3 && this.loginCountdown == 0){
-						
+			this.timerHelper.updateCountdown();
+			if (this.timerHelper.isLoginAllowed()) {
+
 				var username = $('#username').val();
 				var password = $('#password').val();
-				
-				// Remove mail suffix, only username is needed
-				suffixIndex = username.indexOf("@");
-				if (suffixIndex != -1) {
-					username = username.substr(0, suffixIndex);
-					$('#username').val(username);
+
+				if (this.loadingView) {
+					this.loadingView.spinnerOn();
 				}
-				
-				// Usernames have to be all lower case, otherwise some service logins will fail
-				username = username.toLowerCase()
-				$('#username').val(username);
-				
-				this.model.generateLoginURL({username: username, password: password});
 
 				var that = this;
-				this.model.fetch({
-					success: function(model, response, options){
+				login.executeLogin({
+					username: username,
+					password: password,
+					session: that.model
+				}).progress(function(login) {
+					$('#username').val(login.username);
+				}).done(function(session) {
+					that.timerHelper.unsetFailureTimer();
 
-						// Response contains error, so go to errorHandler
-						if(response['error']){
-							console.log(response['error']);
-							that.trigger("errorHandler");
-						}else{
-							// Everything fine, save Moodle Token and redirect to previous form
-							that.model.set('up.session.authenticated', true);
-							that.model.set('up.session.username', username);
-            				that.model.set('up.session.password', password);
-							that.model.set('up.session.MoodleToken', response['token']);
-							that.model.unset('up.session.loginFailureTime');	//wenn login erfolgreich lösche failureTime
-
-							if(that.model.get('up.session.redirectFrom')){
-		                		var path = that.model.get('up.session.redirectFrom');
-		                		that.model.unset('up.session.redirectFrom');
-		                		app.route(path);
-		            		}else{
-		                		app.route('');
-		            		}
-						}
-
-					},
-					error: function(model, response, options){
-						console.log(response);
+					if(that.model.get('up.session.redirectFrom')){
+						var path = that.model.get('up.session.redirectFrom');
+						that.model.unset('up.session.redirectFrom');
+						app.route(path);
+					}else{
+						app.route('');
+					}
+				}).fail(function(error) {
+					if (error.code === "missingConnection") {
 						// render error view
 						that.trigger("missingConnection");
+					} else {
+						console.log(error.message);
+						that.trigger("errorHandler");
+					}
+				}).always(function() {
+					if (that.loadingView) {
+						that.loadingView.spinnerOff();
 					}
 				});
 			}else{
@@ -139,21 +165,21 @@ define([
 		},
 		
 		render: function(){
-			this.updateCountdown();
-			this.logintemplate = rendertmpl('login');
-			console.log(this.page)
+			this.timerHelper.updateCountdown();
 			this.setElement(this.page.find('#options'));
-			this.$el.html(this.logintemplate({countdown: this.formatCountdown(this.loginCountdown)}));
-			var _this = this;
-			if(this.loginCountdown > 0){
+			this.$el.html(this.logintemplate({countdown: this.formatCountdown(this.timerHelper.loginCountdown)}));
+
+			if (this.timerHelper.isCountdownActive()) {
 				this.$("#error3").css('display', 'block');
-			}else{
+			} else {
 				this.$("#error3").css('display', 'none');
 			}
-			new utils.LoadingView({model: this.model, el: this.$("#loadingSpinner")});
+			this.loadingView = new utils.LoadingView({model: this.model, el: this.$("#loadingSpinner")});
+
+			this.$el.trigger("create");
 
 			return this;
-		},
+		}
 	});
 	
 	app.views.OptionsLogout = Backbone.View.extend({
@@ -161,16 +187,15 @@ define([
 		events:{
 			'submit #logoutform': 'logout'
 		},
+
 		initialize: function(){
 			this.model = new Session();
 		},
 		
 		logout: function(ev){
 			ev.preventDefault();
-			this.model.unset('up.session.authenticated');
-            this.model.unset('up.session.username');
-            this.model.unset('up.session.password');
-            this.model.unset('up.session.MoodleToken');
+			this.model.unsetLogin();
+			this.model.clearPrivateCache();
 			app.route('');
 		},
 		
@@ -181,11 +206,9 @@ define([
 
 			new utils.LoadingView({model: this.model, el: this.$("#loadingSpinner")});
 			return this;
-		},
-		missingInternetConnectionHandler: function(){
-			this.$("#error0").css('display', 'block');
 		}
 	});
+
 	/**
 	 *	BackboneView - OptionsPageView
 	 *	Login & Logout-Form which validates the username and password using the Moodle Webservice
@@ -199,16 +222,12 @@ define([
 			this.template = rendertmpl('options');
 		},
 
-		
 		render: function(){
 			var $el = $(this.el); 
 			$el.html(this.template({}));
 			$el.trigger("create");
 			return this;
-		},
-
-		
-
+		}
 	});
 
 	return app.views.OptionsPage;

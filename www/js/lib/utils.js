@@ -6,9 +6,22 @@ define([
 	'hammerjs',
 	'uri/URI',
 	'moodle.download',
+	'pmodules/moodle/moodle.sso.login',
 	'underscore.string',
 	'cache'
-], function($, _, Backbone, Session, Hammer, URI, MoodleDownload, _str){
+], function($, _, Backbone, Session, Hammer, URI, MoodleDownload, moodleSso, _str){
+
+	// Necessary IE workaround. See
+	//
+	// https://developer.mozilla.org/de/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
+	//
+	// for details
+	if (!String.prototype.startsWith) {
+		String.prototype.startsWith = function(searchString, position) {
+			position = position || 0;
+			return this.indexOf(searchString, position) === position;
+		};
+	}
 
 	/*
 	 * Template Loading Functions
@@ -196,34 +209,17 @@ define([
 	* Betriebssystem/UserAgent ermitteln
 	*/
 	var detectUA = function($, userAgent) {
-		$.os = {};
-		$.os.webkit = userAgent.match(/WebKit\/([\d.]+)/) ? true : false;
-		$.os.android = userAgent.match(/(Android)\s+([\d.]+)/) || userAgent.match(/Silk-Accelerated/) ? true : false;
-		$.os.androidICS = $.os.android && userAgent.match(/(Android)\s4/) ? true : false;
-		$.os.ipad = userAgent.match(/(iPad).*OS\s([\d_]+)/) ? true : false;
-		$.os.iphone = !$.os.ipad && userAgent.match(/(iPhone\sOS)\s([\d_]+)/) ? true : false;
-		$.os.ios7 = userAgent.match(/(iPhone\sOS)\s([789_]+)/) ? true : false;
-		$.os.webos = userAgent.match(/(webOS|hpwOS)[\s\/]([\d.]+)/) ? true : false;
-		$.os.touchpad = $.os.webos && userAgent.match(/TouchPad/) ? true : false;
-		$.os.ios = $.os.ipad || $.os.iphone;
-		$.os.playbook = userAgent.match(/PlayBook/) ? true : false;
-		$.os.blackberry10 = userAgent.match(/BB10/) ? true : false;
-		$.os.blackberry = $.os.playbook || $.os.blackberry10|| userAgent.match(/BlackBerry/) ? true : false;
-		$.os.chrome = userAgent.match(/Chrome/) ? true : false;
-		$.os.opera = userAgent.match(/Opera/) ? true : false;
-		$.os.fennec = userAgent.match(/fennec/i) ? true : userAgent.match(/Firefox/) ? true : false;
-		$.os.ie = userAgent.match(/MSIE 10.0/i) ? true : false;
-		$.os.ieTouch = $.os.ie && userAgent.toLowerCase().match(/touch/i) ? true : false;
-		$.os.supportsTouch = ((window.DocumentTouch && document instanceof window.DocumentTouch) || 'ontouchstart' in window);
-		//features
-		$.feat = {};
-		var head = document.documentElement.getElementsByTagName("head")[0];
-		$.feat.nativeTouchScroll = typeof(head.style["-webkit-overflow-scrolling"]) !== "undefined" && ($.os.ios||$.os.blackberry10);
-		$.feat.cssPrefix = $.os.webkit ? "Webkit" : $.os.fennec ? "Moz" : $.os.ie ? "ms" : $.os.opera ? "O" : "";
-		$.feat.cssTransformStart = !$.os.opera ? "3d(" : "(";
-		$.feat.cssTransformEnd = !$.os.opera ? ",0)" : ")";
-		if ($.os.android && !$.os.webkit)
-			$.os.android = false;
+		// Fill in some details if necessary
+		if (!window.device) {
+			window.device = {
+				platform: "browser",
+				version: userAgent
+			};
+		}
+
+		// Add flag for iOS 7 and higher
+		var version = window.device.version.split(".");
+		window.device.ios7 = window.device.platform === "iOS" && parseInt(version[0]) >= 7;
 	};
 
 	/**
@@ -261,12 +257,19 @@ define([
 			}
 		},
 
-		spinnerOn: function() {
+		_miniSpinner: function() {
+			this.$(".up-loadingSpinner").removeClass("extensive-spinner").addClass("compact-spinner");
+		},
+
+		spinnerOn: function(useMini) {
 			this.runningCounter++;
 			if (this.runningCounter == 1) {
 				this.$el.append("<div class=\"up-loadingSpinner extensive-spinner\">" +
 									"<img src=\"img/loadingspinner.gif\"></img>" +
 								"</div>");
+
+				// Make sure to check for "true" because the request event fills in a parameter but we only want to check for truth values
+				if (useMini === true) this._miniSpinner();
 			}
 		},
 
@@ -274,7 +277,7 @@ define([
 			// backbone-fetch-cache is used, we should be aware of prefill requests
 			if (opts.prefill) {
 				this.runningCounter++;
-				this.$(".up-loadingSpinner").removeClass("extensive-spinner").addClass("compact-spinner");
+				this._miniSpinner();
 			}
 		},
 
@@ -291,6 +294,8 @@ define([
 
 	var openInAppBrowser = function(url) {
 		var openWindow = window.open(url, "_blank", "enableViewportScale=yes");
+		// Always ensure user is logged into Moodle
+		moodleSso.loginUser(new Session, openWindow);
 		openWindow.addEventListener('exit', function(event) {
 			hasOpenInAppBrowser = false;
 		});
@@ -308,32 +313,14 @@ define([
 		} else {
 			hasOpenInAppBrowser = true;
 		}
-
-		var moodlePage = "https://moodle2.uni-potsdam.de/";
-		if (url.indexOf(moodlePage) != -1){
-			var session = new Session();
-
-			window.plugins.toast.showShortBottom("Starte Moodle-Login");
-			$.post("https://moodle2.uni-potsdam.de/login/index.php",
-				{
-					username: session.get('up.session.username'),
-					password: session.get('up.session.password')
-				}
-			).done(function(response) {
-				openInAppBrowser(url);
-			}).fail(function() {
-				hasOpenInAppBrowser = false;
-			});
-		} else {
-			openInAppBrowser(url);
-		}
-	}
+		openInAppBrowser(url);
+	};
 
 	/**
 	 * Opens external links according to the platform we are on. For apps this means using the InAppBrowser, for desktop browsers this means opening a new tab.
 	 */
 	var overrideExternalLinks = function(e, removeActiveElementsOnCurrentPage) {
-		var $this = $(e.target);
+		var $this = $(e.currentTarget);
 		var href = $this.attr('href') || '';
 		var rel = $this.attr('rel') || false;
 		var target = $this.attr('target');
@@ -408,7 +395,7 @@ define([
 		info.set("line", lineNumber);
 		info.set("column", columnNumber);
 
-		console.error("Unhandled error thrown", info.attributes, error.stack);
+		console.error("Unhandled error thrown", info.attributes, (error || {}).stack);
 
 		info.on("error", function(error) {
 			console.warn("Could not log error");

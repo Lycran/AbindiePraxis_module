@@ -18,7 +18,8 @@ define([
 				if (options && options.replace) {
 					that.history.pop();
 				}
-				
+				that.push(fragment);
+
 				// Call original function
 				savedNavigate.apply(this, arguments);
 			};
@@ -49,10 +50,12 @@ define([
 		push: function(route) {
 			this.history.push({name: route});
 		},
-		
-		currentRoute: function() {
-			if (this.history.length > 0) {
-				return this.history[this.history.length-1].name;
+
+		currentRouteInTransition: function() {
+			if (this.history.length > 1) {
+				return this.history[this.history.length - 2].name;
+			} else if (this.history.length > 0) {
+				return this.history[this.history.length - 1].name;
 			} else {
 				return undefined;
 			}

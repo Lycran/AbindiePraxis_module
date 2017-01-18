@@ -1,4 +1,4 @@
-define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu','datebox'], function($, _, Backbone, utils, Q, campusmenu, datebox){
+define(['jquery', 'underscore', 'backbone', 'utils', 'modules/campusmenu','datebox', 'view.utils'], function($, _, Backbone, utils, campusmenu, datebox, viewUtils){
 	var rendertmpl = _.partial(utils.rendertmpl, _, "js/pmodules/mensa");
 
 	$(document).on("pageshow", "#mensa", function () {
@@ -6,32 +6,16 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu','
 		$("div[data-role='campusmenu']").campusmenu("pageshow");
 		console.log("pageshow finished");
 	});
-
-	var MenuLoader = Backbone.Model.extend({
-		
-		fetch: function() {
-			this.trigger("request");
-			var meals = new Menu({location: this.location});
-			this.listenTo(meals, "sync", this.prepare);
-			this.listenTo(meals, "error", function() { this.trigger("error"); });
-			meals.fetch(utils.cacheDefaults());
-		},
-		
-		prepare: function(meals) {
-			var date = this.date;
-			this.meals = meals.chain()
-							.filter(function(meal) { return new Date(meal.get("date")).toDateString() == date.toDateString(); })
-							.sortBy('order')
-							.map(function(data) { return data.toJSON(); })
-							.value();
-			this.trigger("sync");
-		}
-	});
 	
 	var Menu = Backbone.Collection.extend({
 		
-		initialize: function(params) {
-			var location = params.location;
+		initialize: function(models, options) {
+			this.location = options.location;
+			this.date = options.date;
+		},
+
+		url: function() {
+			var location = this.location;
 			if (location == "griebnitzsee") {
 				location = "Griebnitzsee";
 			} else if (location == "neuespalais") {
@@ -41,13 +25,21 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu','
 			} else if (location == "UlfsCafe") {
 				location = "UlfsCafe";
 			}
-			this.url = "https://api.uni-potsdam.de/endpoints/mensaAPI/1.0/readCurrentMeals?format=json&location=" + location;
+			return "https://api.uni-potsdam.de/endpoints/mensaAPI/1.0/readCurrentMeals?format=json&location=" + location;
 		},
 		
 		parse: function(response) {
+			// Map data format
+			var date = this.date;
 			var icons = response.readCurrentMealsResponse.meals.iconHashMap.entry;
 			var meals = response.readCurrentMealsResponse.meals.meal;
-			return _.map(meals, this.mapToMeal(this.convertToMap(icons)));
+			var mappedMeals = _.map(meals, this.mapToMeal(this.convertToMap(icons)));
+
+			// Filter for correct day
+			return _.chain(mappedMeals)
+				.filter(function(meal) { return new Date(meal.date).toDateString() == date.toDateString(); })
+				.sortBy('order')
+				.value();
 		},
 		
 		convertToMap: function(icons) {
@@ -94,17 +86,81 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu','
 		}
 	});
 
+	var MealView = viewUtils.ElementView.extend({
+		template: rendertmpl('mensa_meal'),
+		postRender: function() {
+			this.$el.trigger("create");
+		}
+	});
+
 	var DayView = Backbone.View.extend({
 		
 		initialize: function() {
 			this.template = rendertmpl('mensa_detail');
-			this.listenTo(this.model, "sync", this.render);
+			this.listenTo(this.collection, "sync", this.render);
 		},
 		
 		render: function() {
-			this.$el.html(this.template({meals: this.model.meals, location: this.model.location}));
+			this.$el.html(this.template({meals: this.collection.toJSON(), location: this.collection.location}));
+
+			var list = this.$(".speiseplan");
+			if (list.length > 0) {
+				new viewUtils.ListView({
+					el: list,
+					collection: this.collection,
+					view: MealView,
+					postRender: function() {
+						this.$el.collapsibleset().collapsibleset("refresh");
+					}
+				}).render();
+			}
+
 			this.$el.trigger("create");
 			return this;
+		}
+	});
+
+	var LocationTabView = Backbone.View.extend({
+
+		initialize: function(params) {
+			this.mensa = params.mensa;
+			this.date = params.date;
+		},
+
+		requestFail: function(error) {
+			this.trigger("requestFail", error);
+		},
+
+		render: function() {
+			this.$el.append('<div id="loadingSpinner"></div> \
+				<div id="content"></div> \
+				<div id="secondLoadingSpinner"></div> \
+				<div id="secondContent"></div>');
+
+			var loader = new Menu([], {
+				location: this.mensa,
+				date: this.date
+			});
+
+			new utils.LoadingView({collection: loader, el: this.$("#loadingSpinner")});
+			new DayView({collection: loader, el: this.$("#content")});
+			this.listenTo(loader, "error", this.requestFail);
+
+			loader.fetch(utils.cacheDefaults());
+
+			if (this.mensa === "griebnitzsee") {
+				// Load Ulfs Cafe in second view
+				var secondLoader = new Menu([], {
+					location: "UlfsCafe",
+					date: this.date
+				});
+
+				new utils.LoadingView({collection: secondLoader, el: this.$("#secondLoadingSpinner")});
+				new DayView({collection: secondLoader, el: this.$("#secondContent")});
+				this.listenTo(secondLoader, "error", this.requestFail);
+
+				secondLoader.fetch(utils.cacheDefaults());
+			}
 		}
 	});
 
@@ -139,33 +195,14 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'q', 'modules/campusmenu','
 		},
 
 		updateMenu: function(mensa, date) {
-		    uniqueDivId = _.uniqueId("id_");
+		    var uniqueDivId = _.uniqueId("id_");
 		    
 		    this.$("#todaysMenu").empty();
-			this.$("#todaysMenu").append('<div id="' + uniqueDivId + '"><div id="loadingSpinner"></div><div id="content"></div><div id="secondLoadingSpinner"></div><div id="secondContent"></div></div>');
-			
-			var loader = new MenuLoader();
-		    loader.location = mensa;
-		    loader.date = date;
-		    
-		    new utils.LoadingView({model: loader, el: this.$("#" + uniqueDivId + " #loadingSpinner")});
-		    new DayView({model: loader, el: this.$("#" + uniqueDivId + " #content")});
-		    this.listenTo(loader, "error", this.requestFail);
+			this.$("#todaysMenu").append('<div id="' + uniqueDivId + '"></div>');
 
-		    loader.fetch();
-
-		    if (mensa === "griebnitzsee") {
-		    	// Load Ulfs Cafe in second view
-		    	var secondLoader = new MenuLoader();
-		    	secondLoader.location = "UlfsCafe";
-		    	secondLoader.date = date;
-
-		    	new utils.LoadingView({model: secondLoader, el: this.$("#" + uniqueDivId + " #secondLoadingSpinner")});
-		    	new DayView({model: secondLoader, el: this.$("#" + uniqueDivId + " #secondContent")});
-		    	this.listenTo(secondLoader, "error", this.requestFail);
-
-		    	secondLoader.fetch();
-		    }
+			var locationTab = new LocationTabView({el: this.$("#" + uniqueDivId), mensa: mensa, date: date});
+			this.listenTo(locationTab, "requestFail", this.requestFail);
+			locationTab.render();
 		},
 
 		requestFail: function(error) {

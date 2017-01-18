@@ -19,7 +19,18 @@
 				<a href="#grades/grades" data-role="button">Meine<br>Leistungen</a>
 			</div>
 			<div class="flex-item iconized moodle">
+				<% if (window.cordova) { %>
 				<a href="#moodle/moodle/index" data-role="button">Moodle</a>
+				<% } else { %>
+				<a href="https://moodle2.uni-potsdam.de/" data-role="button">Moodle</a>
+				<% } %>
+			</div>
+			<div class="flex-item iconized mail-icon">
+				<% if (window.cordova) { %>
+				<a href="#mail/mail" data-role="button">Mail</a>
+				<% } else { %>
+				<a href="https://mailup.uni-potsdam.de/" data-role="button">Mail</a>
+				<% } %>
 			</div>
 		</div>
 	</div>
@@ -65,6 +76,9 @@
 			</div>
 			<div class="flex-item iconized person">
 				<a href="#people/people" data-role="button">Personen-<br>suche</a>
+			</div>
+			<div class="flex-item iconized tipps">
+				<a href="#tipp" data-role="button">Tipps<br>& Tricks</a>
 			</div>
 			<div class="flex-item iconized imprint">
 				<a href="#impressum" data-role="button">Impressum</a>

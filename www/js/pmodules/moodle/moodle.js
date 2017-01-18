@@ -5,8 +5,9 @@ define([
         'utils',
         'pmodules/moodle/moodle.api',
         'pmodules/moodle/moodle.utils',
-        'Session'
-], function( $, _, Backbone, utils, moodleAPI, moodleUtils, Session) {
+        'Session',
+        'pmodules/moodle/moodle.sso.login'
+], function( $, _, Backbone, utils, moodleAPI, moodleUtils, Session, moodleSSO) {
     var rendertmpl = _.partial(utils.rendertmpl, _, "js/pmodules/moodle");
 
     "use strict";
@@ -69,7 +70,7 @@ define([
 
     fetch: function(){
         var collection = this;
-        moodleAPI.api.moodle_enrol_get_users_courses().done(function(content){
+        moodleAPI.api.core_enrol_get_users_courses().done(function(content){
             collection.reset(content);
         });
         return this;

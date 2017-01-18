@@ -5,9 +5,8 @@ define([
     'backboneMVC',
     'underscore.string',
     'utils',
-    'q',
     'history'
-], function ($, _, Backbone, BackboneMVC, _str, utils, Q, customHistory) {
+], function ($, _, Backbone, BackboneMVC, _str, utils, customHistory) {
     var pageContainer = _.extend({
 
         initialize: function() {
@@ -21,6 +20,7 @@ define([
         _getPageContainer: function () {
             if (!this.$pageContainer) {
                 this.$pageContainer = $('#pagecontainer');
+                $.mobile.hideUrlBar = false;
             }
             return this.$pageContainer;
         },
@@ -49,7 +49,7 @@ define([
 
             // Render page, add padding for the header and update the header
             page.render();
-            var pageContent = page.$el.attr("data-role", "page").css('padding-top', '54px');
+            var pageContent = page.$el.attr("data-role", "page").css('padding-top', window.device.ios7 ? '79px' : '54px');
             this.updateHeader(pageContent);
         },
 
@@ -121,13 +121,13 @@ define([
         initialize: function() {
             _.bindAll(this, "notifyMissingServerConnection", "removeActiveElementsOnCurrentPage");
 
-            this.listenTo(pageContainer, "beforeTransition", function(options) { customHistory.push(options.route.to); });
             this.listenTo(pageContainer, "afterTransition", this.afterTransition);
         },
 
         setIosHeaderFix: function () {
-            if ($.os.ios7) {
+            if (window.device.ios7) {
                 $('body').addClass('ios-statusbar');
+                $("div[data-role='page']").css('padding-top', '79px');
             }
         },
 
@@ -153,7 +153,7 @@ define([
         },
 
         /**
-         * Wird nach Pagetransition ausgeführt
+         * Wird nach Pagetransition ausgefÃ¼hrt
          */
         afterTransition: function(transitionOptions) {
             var c = transitionOptions.extras.c;
@@ -187,7 +187,7 @@ define([
 
             var content = false;
             var view = page; //Wenn keine Viewklasse vorhanden ist, die page als view nehmen
-            if (this.hasView(c, a)) { //Wenn eine View-Klasse für Content vorhanden ist: ausführen
+            if (this.hasView(c, a)) { //Wenn eine View-Klasse fÃ¼r Content vorhanden ist: ausfÃ¼hren
                 content = view = this.instanciateView(c, a, params);
             }
             app.currentView = view; //app.currentView kann als Referenz im HTML z.b. im onclick-Event verwendet werden
@@ -199,14 +199,14 @@ define([
         },
 
         /*
-         * Momentan aktive Seite zurückgeben
+         * Momentan aktive Seite zurÃ¼ckgeben
          */
         activePageExtract: function () {
             return $.mobile.activePage;
         },
 
         /*
-         * InhaltsContainer der momentan aktiven Seite zurückgeben
+         * InhaltsContainer der momentan aktiven Seite zurÃ¼ckgeben
          */
         activeCon: function() {
             return $('.ui-content', this.activePageExtract());
@@ -215,11 +215,11 @@ define([
         notifyMissingServerConnection: function (app) {
             $('.ui-btn-active', this.activePageExtract()).removeClass('ui-btn-active'); //Aktuell fokussierten Button deaktivieren, dass die selektierungsfarbe verschwindet
             app.previous(true);
-            var s = 'Es konnte keine Verbindung zum Server hergestellt werden. Bitte überprüfe deine Internetverbindung';
-            if (navigator.notification) //Über Plugin für App
+            var s = 'Es konnte keine Verbindung zum Server hergestellt werden. Bitte Ã¼berprÃ¼fe deine Internetverbindung';
+            if (navigator.notification) //Ã¼ber Plugin fÃ¼r App
                 navigator.notification.alert(s, null, 'Kein Internet'); //Fehlermeldung ausgeben
             else
-                alert(s); //Für Browser
+                alert(s); //FÃ¼r Browser
         },
 
         removeActiveElementsOnCurrentPage: function() {

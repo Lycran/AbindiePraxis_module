@@ -83,7 +83,7 @@ define([
 
         parse: function(response) {
             // Events have to be grouped by groupId to know which dates belong together
-            var groups = response.courseData.course[0].events.event;
+            var groups = this.ensureArray(response.courseData.course)[0].events.event;
             var groupedEvents = _.groupBy(this.ensureArray(groups), "groupId");
 
             var joinLecturers = function(lecturers) {
@@ -164,10 +164,10 @@ define([
         _loadOnce: function(vvzHistory, success) {
             this.items.url = vvzHistory.first().get("suburl");
             this.items.reset();
-            this.items.fetch(utils.cacheDefaults({
+            this.items.fetch({
                 reset: true,
                 success: success
-            }));
+            });
         }
     });
 
@@ -177,32 +177,44 @@ define([
         parse: function(response) {
             if (response.lectureScheduleRoot) {
                 var models = response.lectureScheduleRoot.rootNode.childNodes.childNode;
-                return _.map(this.ensureArray(models), function(model) {
-                    return {
-                        name: model.headerName,
-                        headerId: model.headerId,
-                        isCategory: true
-                    };
-                });
+                return _.chain(this.ensureArray(models))
+                        .reject(function(model) { return model === ""; })
+                        .reject(function(model) { return !model.headerId; })
+                        .map(function(model) {
+                            return {
+                                name: model.headerName,
+                                headerId: model.headerId,
+                                isCategory: true
+                            };
+                        })
+                        .value();
             } else if (response.lectureScheduleSubTree) {
                 var models = response.lectureScheduleSubTree.currentNode.childNodes.childNode;
-                return _.map(this.ensureArray(models), function(model) {
-                    return {
-                        name: model.headerName,
-                        headerId: model.headerId,
-                        isCategory: true
-                    };
-                });
+                return _.chain(this.ensureArray(models))
+                        .reject(function(model) { return model === ""; })
+                        .reject(function(model) { return !model.headerId; })
+                        .map(function(model) {
+                            return {
+                                name: model.headerName,
+                                headerId: model.headerId,
+                                isCategory: true
+                            }
+                        })
+                        .value();
             } else if (response.lectureScheduleCourses) {
                 var models = response.lectureScheduleCourses.currentNode.courses.course;
-                return _.map(this.ensureArray(models), function(model) {
-                    return {
-                        name: model.courseName,
-                        type: model.courseType,
-                        isCourse: true,
-                        courseId: model.courseId
-                    };
-                });
+                return _.chain(this.ensureArray(models))
+                        .reject(function(model) { return model === ""; })
+                        .reject(function(model) { return !model.courseId; })
+                        .map(function(model) {
+                            return {
+                                name: model.courseName,
+                                type: model.courseType,
+                                isCourse: true,
+                                courseId: model.courseId
+                            };
+                        })
+                        .value();
             }
         },
 
@@ -246,6 +258,7 @@ define([
         openVvz: function(vvzItem) {
             var current = vvzItem.pick("name", "suburl");
             this.add(current, {at: 0});
+            this.trigger("vvzNavigateRequired", this);
         },
 
         resetToUrl: function(modelUrl) {
@@ -253,6 +266,7 @@ define([
             var remainingModels = this.last(this.length - this.indexOf(model));
 
             this.reset(remainingModels);
+            this.trigger("vvzNavigateRequired", this);
         },
 
         triggerVvzChange: function() {

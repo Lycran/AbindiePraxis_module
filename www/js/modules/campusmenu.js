@@ -1,4 +1,99 @@
-define(['jquery', 'underscore', 'backbone', 'jquerymobile'], function($, _, Backbone){
+define([
+	'jquery',
+	'underscore',
+	'backbone',
+	'jquerymobile'
+], function($, _, Backbone) {
+
+	var TabModel = Backbone.Model.extend({
+
+		initialize: function() {
+			if (this.getItem() === undefined) {
+				this.setItem("griebnitzsee");
+			}
+		},
+
+		setItem: function(selection) {
+			localStorage.setItem("campusmenu.default", selection);
+		},
+
+		getItem: function() {
+			return localStorage.getItem("campusmenu.default");
+		}
+	});
+
+	/**
+	 * Uses the jQuery UI tabs widget. Documentation at https://api.jqueryui.com/tabs/
+	 */
+	var TabView = Backbone.View.extend({
+
+		events: {
+			"click .tabs-content-links": "tabClick"
+		},
+
+		initialize: function() {
+			this.model = new TabModel();
+		},
+
+		/**
+		 * We want to prevent the url from changing, but in return we have to change the button color of the active tab ourselves.
+		 */
+		tabClick: function(ev) {
+			ev.preventDefault();
+
+			// Store new location
+			var location = (ev.target.hash || "#").slice(1);
+			this.model.setItem(location);
+
+			// Change active tab button manually
+			$(".ui-btn-active", ev.currentTarget).first().removeClass("ui-btn-active");
+			$(ev.target).addClass("ui-btn-active");
+
+			return false;
+		},
+
+		refresh: function() {
+			this.$el.tabs().tabs("refresh");
+		},
+
+		_indexForLocation: function(location) {
+			switch (location) {
+				case "griebnitzsee":
+					return 0;
+				case "neuespalais":
+					return 1;
+				case "golm":
+					return 2;
+				default:
+					return 0;
+			}
+		},
+
+		render: function() {
+			this.$el.empty();
+			this.$el.append(
+				'<div data-role="tabs" class="tabs-content"> \
+					<div data-role="navbar"> \
+						<ul class="tabs-content-links"> \
+							<li><a href="#griebnitzsee">Griebnitzsee</a></li> \
+							<li><a href="#neuespalais">Neues Palais</a></li> \
+							<li><a href="#golm">Golm</a></li> \
+						</ul> \
+					</div> \
+					<div id="griebnitzsee">Griebnitzsee</div> \
+					<div id="neuespalais">Neues Palais</div> \
+					<div id="golm">Golm</div> \
+				</div>');
+
+			// Select stored tab
+			var location = this.model.getItem();
+			this.$("a[href=#" + location + "]").addClass("ui-btn-active");
+			this.$(".tabs-content").tabs({ active: this._indexForLocation(location) });
+
+			return this;
+		}
+	});
+
 	$.widget("up.campusmenu", {
 		options: {
 			onChange: function(name) {},
@@ -106,4 +201,8 @@ define(['jquery', 'underscore', 'backbone', 'jquerymobile'], function($, _, Back
 			this.options.onChange(callOptions);
 		}
 	});
+
+	return {
+		TabView: TabView
+	}
 });

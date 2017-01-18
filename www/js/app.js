@@ -6,7 +6,6 @@ define([
 	'backboneMVC',
 	'underscore.string',
 	'utils',
-	'q',
 	'fastclick',
 	'Session',
 	'history',
@@ -15,7 +14,7 @@ define([
 	'jquerymobile',
 	'datebox',
 	'LocalStore'
-	], function($, _, Backbone, BackboneMVC, _str, utils, Q, FastClick, Session, customHistory, ViewHelper, controllerLoader){
+	], function($, _, Backbone, BackboneMVC, _str, utils, FastClick, Session, customHistory, ViewHelper, controllerLoader){
 		var viewContainer = ViewHelper.viewContainer;
 		viewContainer.initialize();
 		var pageContainer = ViewHelper.pageContainer;
@@ -27,29 +26,32 @@ define([
 			}
 		});
 
-
 		_.extend(app, {
 			authUrls: [
 				"https://api.uni-potsdam.de/endpoints/roomsAPI",
 				"https://api.uni-potsdam.de/endpoints/libraryAPI",
 				"https://api.uni-potsdam.de/endpoints/pulsAPI",
 				"https://api.uni-potsdam.de/endpoints/moodleAPI",
-				"https://api.uni-potsdam.de/endpoints/transportAPI/1.0/",
+				"https://api.uni-potsdam.de/endpoints/transportAPI/2.0/",
 				"https://api.uni-potsdam.de/endpoints/errorAPI",
 				"https://api.uni-potsdam.de/endpoints/personAPI",
 				"https://api.uni-potsdam.de/endpoints/mensaAPI",
+				"https://api.uni-potsdam.de/endpoints/newsAPI",
 				"https://api.uni-potsdam.de/endpoints/staticContent"],
 			router : new AppRouter(), //Router zuweisen
 			viewManager: viewContainer,
 			/*
 			* Intitialisierung
 			*/
+
 			initialize: function(){
 				app.session = new Session;
-				utils.detectUA($, navigator.userAgent);
-				viewContainer.setIosHeaderFix();
 				new FastClick(document.body);
-				
+
+				if (!window.device) {
+					utils.detectUA($, navigator.userAgent);
+				}
+
 				$(document).ready(function() {
   					document.addEventListener("deviceready", onDeviceReady, false);
 				});
@@ -58,6 +60,9 @@ define([
 				 *	functions get exectuted when device is ready and handles hiding of splashscreen and backButton navigation
 				 */
 				function onDeviceReady() {
+					utils.detectUA($, navigator.userAgent);
+					viewContainer.setIosHeaderFix();
+
     				// hide splashscreen
     				navigator.splashscreen.hide();
     				// EventListener for BackButton
@@ -124,7 +129,7 @@ define([
 				return url;
 			},
 			/*
-			* Zur letzten URL zurückwechseln, die in app.history gespeichert ist 
+			* Zur letzten URL zurückwechseln, die in app.history gespeichert ist
 			* @noTrigger: Aktion ausführen: false, sonst true
 			*/
 			previous: function(noTrigger){
@@ -137,12 +142,12 @@ define([
 			* @c: Controllername
 			* @a: Actionsname
 			* @url: anzufragende URL oder Objekt mit Daten für den View
-			* @transition: Als String: jQueryMobile-Pagetransitionsname (Standard: slide), 
+			* @transition: Als String: jQueryMobile-Pagetransitionsname (Standard: slide),
 						   Oder als Objekt: Parameter für das Rendern des View
 			*/
 			loadPage: function(c, a, params, transition) {
 				params = params || {};
-				var q = Q.defer();
+				var q = $.Deferred();
 
 				var page = viewContainer.prepareViewForDomDisplay(c, params);
 
@@ -157,15 +162,15 @@ define([
 						q: q
 					},
 					route: {
-						from: customHistory.currentRoute(),
+						from: customHistory.currentRouteInTransition(),
 						to: Backbone.history.fragment
 					}
 				};
 				pageContainer.executeTransition(transitionOptions);
 
-				return q.promise;
+				return q.promise();
 			},
-			
+
 			/**
 			* Globale Events setzen
 			*/
@@ -177,7 +182,7 @@ define([
 						  viewContainer.notifyMissingServerConnection(app);
 					  }
 				});
-				
+
 				$(document).on('click', 'a[data-rel="back"]', function(){ //Backbutton clicks auf zurücknavigieren mappen
 					customHistory.goBack();
 				});

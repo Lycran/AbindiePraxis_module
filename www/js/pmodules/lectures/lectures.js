@@ -105,6 +105,47 @@ define([
 		renderPostAction: function() { this.$el.collapsibleset().collapsibleset("refresh"); }
 	});
 
+	var EmptyListNotifier = Backbone.View.extend({
+
+		runningCounter: 0,
+
+		initialize: function() {
+			this.listenTo(this.collection, "request", this.loadingOn);
+			this.listenTo(this.collection, "cachesync", this.loadingHold);
+			this.listenTo(this.collection, "sync", this.loadingOff);
+			this.listenTo(this.collection, "error", this.loadingError);
+		},
+
+		loadingOn: function() {
+			this.runningCounter++;
+		},
+
+		loadingHold: function(model, attr, opts) {
+			if (opts.prefill) {
+				this.runningCounter++;
+			}
+		},
+
+		loadingOff: function() {
+			this.runningCounter--;
+			if (this.runningCounter <= 0) {
+				this.render();
+			}
+		},
+
+		loadingError: function() {
+			this.runningCounter--;
+		},
+
+		render: function() {
+			if (this.collection.isEmpty()) {
+				this.$el.show();
+			} else {
+				this.$el.hide();
+			}
+		}
+	});
+
 	var LectureSingleCourseView = Backbone.View.extend({
 
 		initialize: function() {
@@ -143,11 +184,10 @@ define([
 			this.vvzHistory = vvzHistory;
 			this.listenTo(vvzHistory, "vvzChange", function(vvzHistory) { currentVvz.load(vvzHistory); });
 			this.listenTo(vvzHistory, "vvzChange", this.createPopupMenu);
-			this.listenTo(vvzHistory, "vvzChange", this.triggerOpenVvzUrl);
 
 			this.listenTo(currentVvz.items, "error", this.requestFail);
 			
-			_.bindAll(this, 'render', 'requestFail', 'selectMenu', 'selectLevel', 'prepareVvz', 'triggerOpenVvzUrl', 'createPopupMenu');
+			_.bindAll(this, 'render', 'requestFail', 'selectMenu', 'selectLevel', 'prepareVvz', 'createPopupMenu');
 		},
 
 		requestFail: function(error) {
@@ -173,10 +213,7 @@ define([
 			new LectureNodesView({collection: currentVvz.items, el: this.$("#lectureCategoryList")});
 			new LectureCoursesView({collection: currentVvz.items, el: this.$("#lectureCourseList")});
 			new utils.LoadingView({collection: currentVvz.items, el: this.$("#loadingSpinner")});
-		},
-
-		triggerOpenVvzUrl: function(vvzHistory) {
-			this.trigger("openVvzUrl", vvzHistory);
+			new EmptyListNotifier({collection: currentVvz.items, el: this.$("#emptyListNotifier")});
 		},
 
 		createPopupMenu: function(history) {

@@ -52,38 +52,39 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		initialize: function(){
 			_.bindAll(this, 'render');
 			this.template = rendertmpl('book');
+			this.model.set("daysleft",daysLeft(this.model.get("endtime")));
 		},
 
 		render: function(){
 			this.$el.html(this.template({book: this.model.toJSON()}));
 			console.log("Abgabe:"+this.model.get("endtime"));
 			
-			var dept = hasDept(this.model.get("endtime"));
+			var dept = isDue(this.model.get("endtime"));
 			
-			// var reminder = false;
-			// reminder = hasReminder(this.model.get("endtime"));
+		
 
 			if(dept){
-				$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/dot_red_small%20.png\" width=\"15px\"/></td>");
+				$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/overdue.png\" width=\"30px\"/></td>");
 				alert("Ihr Buch: "+this.model.get("about")+" muss zurückgegeben bzw. verlängert werden!");
 			}
 			else{
 			// wenn Buch bald zurückgegeben werden muss --> wird der Button orange
 				if(hasReminder(this.model.get("endtime"))){
-					$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/dot_orange_small.png\" width=\"15px\"/></td>");
+					$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/duesoon.png\" width=\"30px\"/></td>");
 					alert("Erinnerung: Ihr Buch "+this.model.get("about")+" muss bald zurückgegeben bzw. verlängert werden!");
 				}
 			
 				else
-					$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/dot_green_small.png\" width=\"15px\"/></td>");
+					$(this.$el).prepend("<td><img style=\"margin-left: 10px\" src=\"img/up/notdue.png\" width=\"30px\"  vertical-align: center   /></td>");
 			}
+
 			return this;
 		},
 
 
 
 		events: {
-	    	"click .renew" : "renew"
+	    	"click .ui-btn ui-input-btn ui-corner-all ui-shadow" : "renew"
 		  },
 
 		renew: function() {
@@ -99,33 +100,51 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		}
 	});
 
-	var hasDept = function(date){
-			var year = date.substr(0,4).valueOf();
-			var month = date.substr(5,2).valueOf();
-			var day = date.substr(8,2).valueOf();
-			var hasDept = false;
-			var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
-			var heute =  Date.now();
-			error = heute-ausgeliehen.getTime();
+	var isDue = function(date){
+			// var year = date.substr(0,4).valueOf();
+			// var month = date.substr(5,2).valueOf();
+			// var day = date.substr(8,2).valueOf();
+			 var isDue = false;
+			// var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
+			// var heute =  Date.now();
+			// error = heute-ausgeliehen.getTime();
 	
-			if(error > 0 ) 
-				hasDept = true;
-			return hasDept;
+			// if(error > 0 ) 
+			// 	isDue = true;
+			// return isDue;
+			if(daysLeft(date)<0)
+				isDue=true;
+			return isDue;
 	};
 
 	var hasReminder = function(date){
-			var year = date.substr(0,4).valueOf();
-			var month = date.substr(5,2).valueOf();
-			var day = date.substr(8,2).valueOf();
+			// var year = date.substr(0,4).valueOf();
+			// var month = date.substr(5,2).valueOf();
+			// var day = date.substr(8,2).valueOf();
 			var hasReminder = false;
-			var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
-			var heute =  Date.now();
-			error = heute-ausgeliehen.getTime();
+			// var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
+			// var heute =  Date.now();
+			// error = heute-ausgeliehen.getTime();
 	
-			if(error > -3*24*60*60*1000)
+			// if(error > -3*24*60*60*1000)
+			// 	hasReminder=true;
+			// console.log("Rückgabe-Erinnerung");
+			if(daysLeft(date)<=3 && daysLeft(date)>=0)
 				hasReminder=true;
-			console.log("Rückgabe-Erinnerung");
 			return hasReminder;
+	};
+
+	var daysLeft = function(date){
+		var days = 0;
+		var year = date.substr(0,4).valueOf();
+		var month = date.substr(5,2).valueOf();
+		var day = date.substr(8,2).valueOf();
+
+		var dueDate = new Date(year, month-1, day, 0, 0, 0, 0);
+		var heute =  Date.now();
+		days = Math.round((dueDate.getTime()-heute)/(1000*60*60*24));
+
+		return days;
 	};
 // BOOK COLLECTION VIEW
 	var BookCollectionView = Backbone.View.extend({
@@ -147,7 +166,7 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		},
 
 		render: function(){
-			var html = "<div style=\"padding-left:10px\"><br><b>Ausgeliehene Bücher und Rückgabedatum<b><br></div><table>";
+			var html = "<div  class=blau style=\"padding-left:10px\"><h1><b>Ihre Bücher<b></h1></div><table><tr><td><div  class=blau><b>Status<b></div></td><td><div  class=blau style=\"padding-left:80px\"><b>Tage bis Rückgabe<b></div></td><td><div  class=blau style=\"padding-left:10px\"><b>Buch-Titel<b></div></td></tr>";
 	  		this.$el.html(html);
 			this.collection.each(function(book){
 				var bookView = new BookView({model: book});

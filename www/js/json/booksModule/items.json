@@ -9,7 +9,7 @@
     "renewals": 0,
     "reminder": 0,
     "starttime": "2014-05-08T12:37Z",
-    "endtime": "2019-06-09",
+    "endtime": "2017-02-09",
     "cancancel": false
     },{
     "status": 1,
@@ -18,7 +18,7 @@
     "label": "BIO SED 03",
     "queue": 1,
     "starttime": "2014-05-12T18:07Z",
-    "endtime": "2019-05-24",
+    "endtime": "2017-02-24",
     "cancancel": true,
     "storage": "pickup service desk",
     "storageid": "http://bib.example.org/library/desk/7"
@@ -28,8 +28,8 @@
     "about": "Hattori H. Hanzo (1503): Learn Japanese in 3 Hours",
     "label": "EDU SED 01",
     "queue": 1,
-    "starttime": "2014-05-12T18:07Z",
-    "endtime": "2015-01-01",
+    "starttime": "2017-01-12T18:07Z",
+    "endtime": "2017-01-29",
     "cancancel": true,
     "storage": "pickup service desk",
     "storageid": "http://bib.example.org/library/desk/1"

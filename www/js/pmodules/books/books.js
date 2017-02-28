@@ -3,8 +3,10 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 
 //	MODELS 
 	var PatronModel = Backbone.Model.extend({
-		url: 'js/json/booksModule/patron.json'	,
+		
 		defaults: {
+			user:null,
+			token:null,
 			name: null,
 			email: null,
 			address: null,
@@ -13,12 +15,65 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			type: null,
 			amount: null,
 		},
+
+		initialize: function(id, token){
+			user = id;
+			token = token;
+		},
+		
+		url: function()
+		{
+			return "http://xpot.gbv.de:7242/DE-517/core/patron/"+user+"&access_token="+token;
+		}
 	});
 
 	var FeeModel = Backbone.Model.extend({
-		url : 'js/json/booksModule/fees.json'
+		
+		defaults:{
+			user:null,
+			token:null
+		},
+		
+		initialize: function(id, cookie){
+			user=id;
+			token=cookie;
+		},
+		
+		url: function()
+		{
+			return "http://xpot.gbv.de:7242/DE-517/core/"+user+"/fees?access_token="+token;
+		}
 	});
 
+	var LoginModel = Backbone.Model.extend({
+		defaults:{
+			user:null,
+			pass:null
+		},
+
+		
+		initialize: function(id, pw){
+			user=id;
+			pass=pw;
+			console.log("Initialize Login Model:"+user+" "+pass);
+			this.url('http://xpot.gbv.de:7242/DE-517/auth/login?'+"username="+id+"&password="+pw+"&grant_type=password");
+		},
+		
+		url: function(){
+			return "http://xpot.gbv.de:7242/DE-517/auth/login?"+"username="+user+"&password="+pass+"&grant_type=password";
+		}
+		
+	});
+	
+	var LoginModelView = Backbone.View.extend({
+		//model: LoginModel,
+
+		// initialize: function {
+			// this.listenTo(model, sync, success);
+			// this.listenTo(model, error, errorHandler);
+		// }
+	});
+	
 	var BookModel = Backbone.Model.extend({
 		defaults: {
 			status: null,
@@ -36,13 +91,28 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 	});
 
 	var BookCollection = Backbone.Collection.extend({
-		url: 'js/json/booksModule/items.json',
+		
+		defaults: {
+			user:null,
+			token:null
+		},
+
+		initialize: function(id, token){
+			user =id;
+			token=token;
+		},
+
 		comparator: 'item',
 		model: BookModel,
 
 		parse: function(data) {
     		return data.doc;
-  		}
+  		},
+
+  		url: function()
+		{
+			return "http://xpot.gbv.de:7242/DE-517/core/"+user+"/items?access_token="+token;
+		}
 	});	
 
 //	VIEWS
@@ -101,34 +171,16 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 	});
 
 	var isDue = function(date){
-			// var year = date.substr(0,4).valueOf();
-			// var month = date.substr(5,2).valueOf();
-			// var day = date.substr(8,2).valueOf();
 			 var isDue = false;
-			// var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
-			// var heute =  Date.now();
-			// error = heute-ausgeliehen.getTime();
-	
-			// if(error > 0 ) 
-			// 	isDue = true;
-			// return isDue;
 			if(daysLeft(date)<0)
 				isDue=true;
 			return isDue;
 	};
 
 	var hasReminder = function(date){
-			// var year = date.substr(0,4).valueOf();
-			// var month = date.substr(5,2).valueOf();
-			// var day = date.substr(8,2).valueOf();
+
 			var hasReminder = false;
-			// var ausgeliehen = new Date(year, month-1, day, 0, 0, 0, 0);
-			// var heute =  Date.now();
-			// error = heute-ausgeliehen.getTime();
-	
-			// if(error > -3*24*60*60*1000)
-			// 	hasReminder=true;
-			// console.log("Rückgabe-Erinnerung");
+
 			if(daysLeft(date)<=3 && daysLeft(date)>=0)
 				hasReminder=true;
 			return hasReminder;
@@ -146,6 +198,8 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 
 		return days;
 	};
+
+	
 // BOOK COLLECTION VIEW
 	var BookCollectionView = Backbone.View.extend({
 
@@ -194,7 +248,7 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		},
 
 		fetchSuccess: function() {
-			console.log("Fetch Sucess");
+			console.log("Patron Fetch Sucess");
 			this.render();
 
 		},
@@ -210,9 +264,6 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 	});
 
 	
-
-
-
 // LOGIN PAGE VIEW
 	app.views.BooksLogin = Backbone.View.extend({
 
@@ -224,10 +275,13 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		login: function(ev){
 			ev.preventDefault();
 			app.session.set('up.session.UBauthenticated', true);	
-			// try to log in
-			// if success
+
+			Login = new LoginModel(document.getElementById("username").value, document.getElementById("password").value);
+			Login.fetch().then(function(){
+				Login.save();
+				console.log("Aquire Login Data..."+Login.get("patron")+" "+Login.get("access_token"));
+			});
 			app.route('books');
-			//else do error handling
 		},
 
 		render: function() {
@@ -235,14 +289,13 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 			this.logouttemplate = rendertmpl('login');
 			this.setElement(this.page.find('#books'));
 			this.$el.html(this.logouttemplate({}));
-
 			this.$el.trigger("create");
 			return this;
 		}
 	});
 
 
-// LOGIN PAGE VIEW
+// LOGOUT PAGE VIEW
 	app.views.BooksLogout = Backbone.View.extend({
 
 		events:{
@@ -278,19 +331,19 @@ define(['jquery', 'underscore', 'backbone', 'utils'], function($, _, Backbone, u
 		render: function(){
 			this.$el.html(this.template({}));
 			if (app.session.get('up.session.UBauthenticated', true)){
-
-
-				var profile = new PatronModel();
-				var fees = new FeeModel();
-				fees.fetch();
-				fees.save();
+				
+				console.log(JSON.stringify(Login));
+				var profile = new PatronModel(Login.get("patron"),Login.get("access_token"));
 				profile.fetch().then(function(){
 					profile.set("amount", fees.get("amount"));
 					if(profile.get("amount")>0)
 						alert("Es sind Gebühren fällig");
 					profile.save();
 				});
-
+				
+				var fees = new FeeModel(Login.get("patron"),Login.get("access_token"));
+				fees.fetch();
+				fees.save();
 				
 				var profileView = new PatronModelView( {model : profile});
 				this.$el.append(profileView.render().el);

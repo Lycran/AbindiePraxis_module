@@ -55,7 +55,7 @@ define([
         },
 
         onSort: function() {
-            console.warn("onSort not implemented", arguments);
+            this.onReset();
         },
 
         onUpdate: function() {
@@ -90,8 +90,25 @@ define([
         }
     });
 
+    var ParentView = Backbone.View.extend({
+        subviews: [],
+
+        _cleanSubviews: function() {
+            _.each(this.subviews, function(view) {
+                view.remove();
+            });
+            this.subviews = [];
+        },
+
+        remove: function() {
+            this._cleanSubviews();
+            Backbone.View.prototype.remove.apply(this, arguments);
+        }
+    });
+
     return {
         ListView: ListView,
-        ElementView: ElementView
+        ElementView: ElementView,
+        ParentView: ParentView
     };
 });

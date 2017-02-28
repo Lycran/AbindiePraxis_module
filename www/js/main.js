@@ -26,6 +26,8 @@ require.config({
         'history': 'lib/history',
         'moodle.download': 'lib/moodle.download',
         'login.sso': 'lib/login.sso',
+        'stateful.models': 'lib/StatefulModels',
+        'PulsAPI': 'lib/PulsAPI',
         'headerParser': 'lib/headerParser'
     },
     // "Paths configurations should only be used for folders, not modules themselves.

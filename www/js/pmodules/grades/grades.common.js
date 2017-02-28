@@ -1,87 +1,12 @@
-define(['jquery', 'underscore', 'backbone', 'utils', 'Session', 'uri/URI'], function($, _, Backbone, utils, Session, URI){
-
-	var PulsAPI = {};
-
-	PulsAPI.Model = Backbone.Model.extend({
-
-		asArray: function(subject) {
-			if (Array.isArray(subject)) {
-				return subject;
-			} else if (subject) {
-				return [subject];
-			} else {
-				return [];
-			}
-		},
-
-		sync: function(method, model, options) {
-			options.url = _.result(model, 'url');
-			options.contentType = "application/json";
-			options.method = "POST";
-			options.data = this._selectRequestData(options.url);
-			return Backbone.Model.prototype.sync.call(this, method, model, options);
-		},
-
-		_selectRequestData: function(url) {
-			var session = new Session();
-			var uri = new URI(url);
-
-			return JSON.stringify({
-				condition: JSON.parse(uri.fragment()),
-				"user-auth": {
-					username: session.get("up.session.username"),
-					password: session.get("up.session.password")
-				}
-			});
-		}
-	});
-
-	PulsAPI.Collection = Backbone.Collection.extend({
-
-		asArray: function(subject) {
-			if (Array.isArray(subject)) {
-				return subject;
-			} else if (subject) {
-				return [subject];
-			} else {
-				return [];
-			}
-		},
-
-		sync: function(method, model, options) {
-			options.url = _.result(model, 'url');
-			options.contentType = "application/json";
-			options.method = "POST";
-			options.data = this._selectRequestData(options.url);
-			// method to catch no user rights exception
-			var error= options.error;
-			var success = options.success;
-			options.success = function(resp){
-				if (resp && resp.message){
-					if (resp.message == "no user rights"){
-						resp.msg = "Die Funktion wird für Sie nicht unterstützt.";
-					}
-        			error(resp);
-				} else{
-					success(resp);
-				}
-			};
-			return Backbone.Model.prototype.sync.call(this, method, model, options);
-		},
-
-		_selectRequestData: function(url) {
-			var session = new Session();
-			var uri = new URI(url);
-
-			return JSON.stringify({
-				condition: JSON.parse(uri.fragment()),
-				"user-auth": {
-					username: session.get("up.session.username"),
-					password: session.get("up.session.password")
-				}
-			});
-		}
-	});
+define([
+	'jquery',
+	'underscore',
+	'backbone',
+	'utils',
+	'Session',
+	'uri/URI',
+	'PulsAPI'
+], function($, _, Backbone, utils, Session, URI, PulsAPI){
 
 	var StudentDetails = PulsAPI.Collection.extend({
 

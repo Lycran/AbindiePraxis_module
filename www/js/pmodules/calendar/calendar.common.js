@@ -5,9 +5,10 @@ define([
 	'utils',
 	'moment',
 	'Session',
+    'pmodules/impressum/impressum.models',
 	'cache',
 	'hammerjs'
-], function($, _, Backbone, utils, moment, Session){
+], function($, _, Backbone, utils, moment, Session, versionModel){
 
 	/**
 	 *	CourseEvent - Backbone Model
@@ -115,6 +116,74 @@ define([
 	});
 
 
+	var BlockBase = CourseEvent.extend({
+
+		/**
+		 * Return true if the given day is part of the block rhythm, false otherwise. "Block (inkl. Sa)" would return true on sundays, "Block" would return true on weekends.
+		 * @param day
+		 * @returns {boolean}
+		 */
+		isBlockRhythmException: function(day) {
+			return false;
+		},
+
+		isOnDay: function(day, courseStarting) {
+			moment.locale("de");
+
+			var startedYet = day.isSameOrAfter(moment(this.get("startDate"), "DD.MM.YYYY"));
+			var endedYet = day.isAfter(moment(this.get("endDate"), "DD.MM.YYYY"));
+
+			return startedYet && !endedYet && !this.isBlockRhythmException(day);
+		},
+
+		exportToCalendar: function(entry, course, callback) {
+			var currentDate = course.getStarting();
+			var lastDate = moment(course.getEnding()).add(1, "days");
+
+			// Android doesn't know block rhythms so we have to save all dates ourselves
+			// Generate new dates as long we haven't got to the end
+			while (currentDate.isBefore(lastDate)) {
+				var temp = _.clone(entry);
+				temp.startDate = this.getBegin(currentDate).toDate();
+				temp.endDate = this.getEnd(currentDate).toDate();
+				callback(temp);
+
+				currentDate.add(1, "day");
+				while (this.isBlockRhythmException(currentDate)) {
+					currentDate.add(1, "day");
+				}
+			}
+		}
+	});
+
+
+	var BlockEvent = BlockBase.extend({
+
+		isBlockRhythmException: function(day) {
+			// Skip weekends
+			return day.day() == 0 || day.day() == 6;
+		}
+	});
+
+
+	var BlockInclSatEvent = BlockBase.extend({
+
+		isBlockRhythmException: function(day) {
+			// Skip sundays
+			return day.day() == 0;
+		}
+	});
+
+
+	var BlockInclSunEvent = BlockBase.extend({
+
+		isBlockRhythmException: function(day) {
+			// Don't skip anything
+			return false;
+		}
+	});
+
+
 	/**
 	 *	Course - BackboneModel
 	 *	@desc	holding one single course with all events
@@ -157,26 +226,37 @@ define([
 		getEvents: function() {
 			return _.map(this.get("events").event, function(event) {
 				//console.log(event);
+				event = _.extend({}, event, this.attributes);
 				if (event.rhythm === "Einzeltermin" || event.rhythm === "Termin") {
 					return new SingleEvent(event);
 				} else if (event.rhythm === "wöchentlich") {
 					return new WeeklyEvent(event);
 				} else if (event.rhythm === "14-täglich") {
 					return new BiWeeklyEvent(event);
+				} else if (event.rhythm === "Block") {
+					return new BlockEvent(event);
+				} else if (event.rhythm === "Block (inkl. Sa)") {
+					return new BlockInclSatEvent(event);
+				} else if (event.rhythm === "Block (inkl. Sa,So)") {
+					return new BlockInclSunEvent(event);
 				} else {
-					console.log("Unknown rhythm " + event.rythm);
-					this.logUnknownCourseRhythm(event.rythm);
+					console.log("Unknown rhythm " + event.rhythm);
+					this.logUnknownCourseRhythm(event.rhythm);
 					return new WeeklyEvent(event);
 				}
 			}, this);
 		},
 
 		logUnknownCourseRhythm: function(rhythm) {
-			var model = new Backbone.Model();
-			model.url = "https://api.uni-potsdam.de/endpoints/errorAPI/rest/courses";
-			model.set("courseName", this.get("name"));
-			model.set("rhythm", rhythm);
-			model.save();
+            new versionModel.VersionModel().fetch().done(_.bind(function(version) {
+                var model = new Backbone.Model();
+                model.url = "https://api.uni-potsdam.de/endpoints/errorAPI/rest/courses";
+                model.set("uuid", utils.getUniqueIdentifier());
+                model.set("courseName", this.get("courseName"));
+                model.set("rhythm", rhythm);
+                model.set("buildNumber", version.versionCode);
+                model.save();
+			}, this));
 		},
 
 		getStarting: function() {
@@ -218,9 +298,22 @@ define([
 			this.url = "https://api.uni-potsdam.de/endpoints/pulsAPI/2.0/getStudentCourses";
 		},
 
+		_asArray: function(data) {
+			if (!data) {
+				return []
+			} else if ($.isArray(data)) {
+				return data;
+			} else {
+				return [data];
+			}
+		},
+
 		parse: function(response) {
 			var student = response.studentCourses.student;
-			return (student.pastCourses.course || []).concat(student.actualCourses.course || []);
+
+			return _.map(this._asArray(student.actualCourses.course), function(course) {
+				return _.extend({current: "true"}, course);
+			}).concat(this._asArray(student.pastCourses.course));
 		},
 
 		sync: function(method, model, options){
